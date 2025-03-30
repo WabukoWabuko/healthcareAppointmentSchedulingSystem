@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
-import { Table, Button } from 'react-bootstrap';
+import { Table, Button, Row, Col } from 'react-bootstrap'; // Added Row, Col
 import AppointmentCard from '../components/AppointmentCard';
 
 function AdminDashboard() {
@@ -89,4 +89,5 @@ function AdminDashboard() {
     </div>
   );
 }
+
 export default AdminDashboard;

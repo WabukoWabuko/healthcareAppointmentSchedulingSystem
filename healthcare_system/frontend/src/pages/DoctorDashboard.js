@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
-import { Form, Button, Row, Col } from 'react-bootstrap';
+import { Form, Button, Row, Col, Card } from 'react-bootstrap'; // Added Card
 import AppointmentCard from '../components/AppointmentCard';
 
 function DoctorDashboard() {
@@ -99,4 +99,5 @@ function DoctorDashboard() {
     </div>
   );
 }
+
 export default DoctorDashboard;
