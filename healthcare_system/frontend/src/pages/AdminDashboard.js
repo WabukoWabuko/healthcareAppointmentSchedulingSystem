@@ -1,8 +1,8 @@
 import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
-import { Table, Button, Row, Col, Form } from 'react-bootstrap'; // Removed Routes from here
-import { Routes, Route } from 'react-router-dom'; // Added correct import
+import { Table, Button, Row, Col, Form } from 'react-bootstrap';
+import { Routes, Route } from 'react-router-dom';
 import AppointmentCard from '../components/AppointmentCard';
 
 function AdminDashboard() {
@@ -40,13 +40,13 @@ function AdminDashboard() {
 
   const handleApprove = async (id) => {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    const updatedAppt = await axios.patch(`http://127.0.0.1:8000/api/appointments/${id}/`, { status: 'confirmed' }, config);
+    await axios.patch(`http://127.0.0.1:8000/api/appointments/${id}/`, { status: 'confirmed' }, config); // Removed unused updatedAppt
     setAppointments(appointments.map(a => (a.id === id ? { ...a, status: 'confirmed' } : a)));
   };
 
   const handleReject = async (id) => {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    const updatedAppt = await axios.patch(`http://127.0.0.1:8000/api/appointments/${id}/`, { status: 'cancelled' }, config);
+    await axios.patch(`http://127.0.0.1:8000/api/appointments/${id}/`, { status: 'cancelled' }, config); // Removed unused updatedAppt
     setAppointments(appointments.map(a => (a.id === id ? { ...a, status: 'cancelled' } : a)));
   };
 
