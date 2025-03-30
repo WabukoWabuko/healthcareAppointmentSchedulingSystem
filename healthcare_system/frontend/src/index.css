@@ -3,3 +3,9 @@ body {
   margin: 0;
   padding: 20px;
 }
+nav { margin-bottom: 20px; }
+nav a, nav button { margin-right: 10px; }
+form { display: flex; flex-direction: column; gap: 10px; max-width: 400px; }
+input, select, button { padding: 8px; }
+ul { list-style: none; padding: 0; }
+li { margin: 5px 0; }
