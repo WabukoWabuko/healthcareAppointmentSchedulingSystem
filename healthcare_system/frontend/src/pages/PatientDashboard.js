@@ -1,7 +1,8 @@
 import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
-import { Form, Button, Row, Col, Routes, Route } from 'react-bootstrap';
+import { Form, Button, Row, Col } from 'react-bootstrap'; // Removed Routes from here
+import { Routes, Route } from 'react-router-dom'; // Added correct import
 import AppointmentCard from '../components/AppointmentCard';
 
 function PatientDashboard() {
@@ -33,16 +34,30 @@ function PatientDashboard() {
   const handleBook = async (e) => {
     e.preventDefault();
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    const res = await axios.post('http://127.0.0.1:8000/api/appointments/', { patient: patientId, doctor: doctorId, datetime, status: 'pending' }, config);
-    setAppointments([...appointments, { ...res.data, doctor_name: doctors.find(d => d.id === res.data.doctor).name }]);
-    setDoctorId('');
-    setDatetime('');
+    try {
+      const res = await axios.post(
+        'http://127.0.0.1:8000/api/appointments/',
+        { patient: patientId, doctor: doctorId, datetime, status: 'pending' },
+        config
+      );
+      setAppointments([...appointments, { ...res.data, doctor_name: doctors.find(d => d.id === res.data.doctor).name }]);
+      setDoctorId('');
+      setDatetime('');
+    } catch (error) {
+      console.error('Error booking appointment:', error);
+      alert('Failed to book appointment: ' + (error.response?.data?.detail || 'Unknown error'));
+    }
   };
 
   const handleCancel = async (id) => {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    await axios.delete(`http://127.0.0.1:8000/api/appointments/${id}/`, config);
-    setAppointments(appointments.filter(a => a.id !== id));
+    try {
+      await axios.delete(`http://127.0.0.1:8000/api/appointments/${id}/`, config);
+      setAppointments(appointments.filter(a => a.id !== id));
+    } catch (error) {
+      console.error('Error cancelling appointment:', error);
+      alert('Failed to cancel appointment: ' + (error.response?.data?.detail || 'Unknown error'));
+    }
   };
 
   return (
