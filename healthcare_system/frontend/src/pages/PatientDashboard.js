@@ -1,42 +1,87 @@
 import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import { Form, Button, Row, Col } from 'react-bootstrap';
+import AppointmentCard from '../components/AppointmentCard';
 
 function PatientDashboard() {
-  const { user, token } = useContext(AuthContext);
+  const { token } = useContext(AuthContext);
   const [doctors, setDoctors] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [doctorId, setDoctorId] = useState('');
   const [datetime, setDatetime] = useState('');
 
   useEffect(() => {
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    axios.get('http://127.0.0.1:8000/api/doctors/', config).then(res => setDoctors(res.data));
-    axios.get('http://127.0.0.1:8000/api/appointments/', config).then(res => setAppointments(res.data));
+    const fetchData = async () => {
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const [docRes, apptRes, patientRes] = await Promise.all([
+        axios.get('http://127.0.0.1:8000/api/doctors/', config),
+        axios.get('http://127.0.0.1:8000/api/appointments/', config),
+        axios.get('http://127.0.0.1:8000/api/patients/', config),
+      ]);
+      setDoctors(docRes.data);
+      setAppointments(apptRes.data.map(appt => ({
+        ...appt,
+        doctor_name: docRes.data.find(d => d.id === appt.doctor)?.name,
+      })));
+      setPatientId(patientRes.data[0].id);
+    };
+    if (token) fetchData();
   }, [token]);
+
+  const [patientId, setPatientId] = useState('');
 
   const handleBook = async (e) => {
     e.preventDefault();
-    const patientId = (await axios.get('http://127.0.0.1:8000/api/patients/', { headers: { Authorization: `Bearer ${token}` } })).data[0].id;
-    await axios.post('http://127.0.0.1:8000/api/appointments/', { patient: patientId, doctor: doctorId, datetime, status: 'pending' }, { headers: { Authorization: `Bearer ${token}` } });
-    setAppointments([...appointments, { patient: patientId, doctor: doctorId, datetime, status: 'pending' }]);
-    alert('Appointment booked!');
+    const config = { headers: { Authorization: `Bearer ${token}` } };
+    const res = await axios.post('http://127.0.0.1:8000/api/appointments/', { patient: patientId, doctor: doctorId, datetime, status: 'pending' }, config);
+    setAppointments([...appointments, { ...res.data, doctor_name: doctors.find(d => d.id === res.data.doctor).name }]);
+    setDoctorId('');
+    setDatetime('');
+  };
+
+  const handleCancel = async (id) => {
+    const config = { headers: { Authorization: `Bearer ${token}` } };
+    await axios.delete(`http://127.0.0.1:8000/api/appointments/${id}/`, config);
+    setAppointments(appointments.filter(a => a.id !== id));
   };
 
   return (
     <div>
-      <h2>Patient Dashboard</h2>
-      <h3>Book an Appointment</h3>
-      <form onSubmit={handleBook}>
-        <select value={doctorId} onChange={(e) => setDoctorId(e.target.value)}>
-          <option value="">Select Doctor</option>
-          {doctors.map(d => (<option key={d.id} value={d.id}>{d.name} ({d.specialization})</option>))}
-        </select>
-        <input type="datetime-local" value={datetime} onChange={(e) => setDatetime(e.target.value)} />
-        <button type="submit">Book</button>
-      </form>
-      <h3>Your Appointments</h3>
-      <ul>{appointments.map(a => (<li key={a.id}>{a.datetime} with Dr. {doctors.find(d => d.id === a.doctor)?.name} - {a.status}</li>))}</ul>
+      <h3>Patient Dashboard</h3>
+      <Row>
+        <Col md={6}>
+          <h4>Book an Appointment</h4>
+          <Form onSubmit={handleBook}>
+            <Form.Group className="mb-3">
+              <Form.Label>Doctor</Form.Label>
+              <Form.Select value={doctorId} onChange={(e) => setDoctorId(e.target.value)}>
+                <option value="">Select Doctor</option>
+                {doctors.map(d => (
+                  <option key={d.id} value={d.id}>{d.name} ({d.specialization})</option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Date & Time</Form.Label>
+              <Form.Control
+                type="datetime-local"
+                value={datetime}
+                onChange={(e) => setDatetime(e.target.value)}
+              />
+            </Form.Group>
+            <Button variant="primary" type="submit">Book</Button>
+          </Form>
+        </Col>
+      </Row>
+      <h4 className="mt-4">Your Appointments</h4>
+      <Row>
+        {appointments.map(a => (
+          <Col md={4} key={a.id}>
+            <AppointmentCard appointment={a} onCancel={handleCancel} />
+          </Col>
+        ))}
+      </Row>
     </div>
   );
 }

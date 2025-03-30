@@ -9,9 +9,16 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (token) {
-      axios.get('http://127.0.0.1:8000/api/auth/users/me/', {
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(res => setUser(res.data)).catch(() => setUser(null));
+      axios
+        .get('http://127.0.0.1:8000/api/auth/users/me/', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then(res => setUser(res.data))
+        .catch(() => {
+          setUser(null);
+          setToken('');
+          localStorage.removeItem('token');
+        });
     }
   }, [token]);
 
