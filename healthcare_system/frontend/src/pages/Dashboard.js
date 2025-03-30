@@ -1,6 +1,6 @@
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import PatientDashboard from './PatientDashboard';
 import DoctorDashboard from './DoctorDashboard';
@@ -9,6 +9,26 @@ import { Container, Row, Col } from 'react-bootstrap';
 
 function Dashboard() {
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      // Redirect based on role immediately after login
+      switch (user.role) {
+        case 'patient':
+          navigate('/dashboard/appointments');
+          break;
+        case 'doctor':
+          navigate('/dashboard/appointments');
+          break;
+        case 'admin':
+          navigate('/dashboard/patients');
+          break;
+        default:
+          break;
+      }
+    }
+  }, [user, navigate]);
 
   if (!user) return <p className="text-center mt-5">Please log in.</p>;
 
@@ -20,7 +40,6 @@ function Dashboard() {
         </Col>
         <Col md={9}>
           <Routes>
-            <Route path="/" element={<h3>Welcome to Your Dashboard</h3>} />
             {user.role === 'patient' && <Route path="/*" element={<PatientDashboard />} />}
             {user.role === 'doctor' && <Route path="/*" element={<DoctorDashboard />} />}
             {user.role === 'admin' && <Route path="/*" element={<AdminDashboard />} />}
@@ -30,4 +49,5 @@ function Dashboard() {
     </Container>
   );
 }
+
 export default Dashboard;

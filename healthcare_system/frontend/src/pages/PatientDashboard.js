@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
-import { Form, Button, Row, Col } from 'react-bootstrap';
+import { Form, Button, Row, Col, Routes, Route } from 'react-bootstrap';
 import AppointmentCard from '../components/AppointmentCard';
 
 function PatientDashboard() {
@@ -10,6 +10,7 @@ function PatientDashboard() {
   const [appointments, setAppointments] = useState([]);
   const [doctorId, setDoctorId] = useState('');
   const [datetime, setDatetime] = useState('');
+  const [patientId, setPatientId] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,8 +30,6 @@ function PatientDashboard() {
     if (token) fetchData();
   }, [token]);
 
-  const [patientId, setPatientId] = useState('');
-
   const handleBook = async (e) => {
     e.preventDefault();
     const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -47,42 +46,60 @@ function PatientDashboard() {
   };
 
   return (
-    <div>
-      <h3>Patient Dashboard</h3>
-      <Row>
-        <Col md={6}>
-          <h4>Book an Appointment</h4>
-          <Form onSubmit={handleBook}>
-            <Form.Group className="mb-3">
-              <Form.Label>Doctor</Form.Label>
-              <Form.Select value={doctorId} onChange={(e) => setDoctorId(e.target.value)}>
-                <option value="">Select Doctor</option>
-                {doctors.map(d => (
-                  <option key={d.id} value={d.id}>{d.name} ({d.specialization})</option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Date & Time</Form.Label>
-              <Form.Control
-                type="datetime-local"
-                value={datetime}
-                onChange={(e) => setDatetime(e.target.value)}
-              />
-            </Form.Group>
-            <Button variant="primary" type="submit">Book</Button>
-          </Form>
-        </Col>
-      </Row>
-      <h4 className="mt-4">Your Appointments</h4>
-      <Row>
-        {appointments.map(a => (
-          <Col md={4} key={a.id}>
-            <AppointmentCard appointment={a} onCancel={handleCancel} />
-          </Col>
-        ))}
-      </Row>
-    </div>
+    <Routes>
+      <Route
+        path="/appointments"
+        element={
+          <div>
+            <h3>Your Appointments</h3>
+            <Row>
+              {appointments.length ? (
+                appointments.map(a => (
+                  <Col md={4} key={a.id}>
+                    <AppointmentCard appointment={a} onCancel={handleCancel} />
+                  </Col>
+                ))
+              ) : (
+                <p>No appointments found.</p>
+              )}
+            </Row>
+          </div>
+        }
+      />
+      <Route
+        path="/book"
+        element={
+          <div>
+            <h3>Book an Appointment</h3>
+            <Row>
+              <Col md={6}>
+                <Form onSubmit={handleBook}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Doctor</Form.Label>
+                    <Form.Select value={doctorId} onChange={(e) => setDoctorId(e.target.value)}>
+                      <option value="">Select Doctor</option>
+                      {doctors.map(d => (
+                        <option key={d.id} value={d.id}>{d.name} ({d.specialization})</option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Date & Time</Form.Label>
+                    <Form.Control
+                      type="datetime-local"
+                      value={datetime}
+                      onChange={(e) => setDatetime(e.target.value)}
+                    />
+                  </Form.Group>
+                  <Button variant="primary" type="submit">Book</Button>
+                </Form>
+              </Col>
+            </Row>
+          </div>
+        }
+      />
+    </Routes>
   );
 }
+
 export default PatientDashboard;

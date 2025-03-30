@@ -10,6 +10,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'updated_at']
 
     def validate(self, data):
+        if self.instance:  # Skip validation on update (e.g., for status changes by admin)
+            return data
         doctor = data['doctor']
         appointment_time = data['datetime']
         # Check if doctor is available
