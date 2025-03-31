@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { Table, Button, Row, Col, Form } from 'react-bootstrap';
-import { Routes, Route } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import AppointmentCard from '../components/AppointmentCard';
 
 function AdminDashboard() {
@@ -12,6 +12,7 @@ function AdminDashboard() {
   const [appointments, setAppointments] = useState([]);
   const [newPatient, setNewPatient] = useState({ name: '', email: '', phone: '', password: '' });
   const [newDoctor, setNewDoctor] = useState({ name: '', specialization: '', email: '', password: '' });
+  const location = useLocation();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -112,13 +113,150 @@ function AdminDashboard() {
   };
 
   return (
-    <Routes>
-      <Route
-        path="/patients"
-        element={
-          <div>
-            <h3>Patients</h3>
-            <Button variant="primary" href="/dashboard/patients/new" className="mb-3">Add Patient</Button>
+    <div>
+      {location.pathname.includes('/patients/new') ? (
+        <div>
+          <h3>Add New Patient</h3>
+          <Form onSubmit={handleCreatePatient}>
+            <Form.Group className="mb-3">
+              <Form.Label>Name</Form.Label>
+              <Form.Control
+                type="text"
+                value={newPatient.name}
+                onChange={(e) => setNewPatient({ ...newPatient, name: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                type="email"
+                value={newPatient.email}
+                onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Phone</Form.Label>
+              <Form.Control
+                type="text"
+                value={newPatient.phone}
+                onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Password</Form.Label>
+              <Form.Control
+                type="password"
+                value={newPatient.password}
+                onChange={(e) => setNewPatient({ ...newPatient, password: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Button variant="primary" type="submit">Create Patient</Button>
+          </Form>
+        </div>
+      ) : location.pathname.includes('/doctors/new') ? (
+        <div>
+          <h3>Add New Doctor</h3>
+          <Form onSubmit={handleCreateDoctor}>
+            <Form.Group className="mb-3">
+              <Form.Label>Name</Form.Label>
+              <Form.Control
+                type="text"
+                value={newDoctor.name}
+                onChange={(e) => setNewDoctor({ ...newDoctor, name: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Specialization</Form.Label>
+              <Form.Control
+                type="text"
+                value={newDoctor.specialization}
+                onChange={(e) => setNewDoctor({ ...newDoctor, specialization: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                type="email"
+                value={newDoctor.email}
+                onChange={(e) => setNewDoctor({ ...newDoctor, email: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Password</Form.Label>
+              <Form.Control
+                type="password"
+                value={newDoctor.password}
+                onChange={(e) => setNewDoctor({ ...newDoctor, password: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Button variant="primary" type="submit">Create Doctor</Button>
+          </Form>
+        </div>
+      ) : location.pathname.includes('/doctors') ? (
+        <div>
+          <h3>Doctors</h3>
+          <Button variant="primary" as={Link} to="/dashboard/doctors/new" className="mb-3">Add Doctor</Button>
+          {doctors.length ? (
+            <Table striped bordered hover>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Specialization</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {doctors.map(d => (
+                  <tr key={d.id}>
+                    <td>{d.id}</td>
+                    <td>{d.name}</td>
+                    <td>{d.specialization}</td>
+                    <td>
+                      <Button variant="danger" onClick={() => handleDeleteDoctor(d.id)}>Delete</Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          ) : (
+            <p>No doctors found.</p>
+          )}
+        </div>
+      ) : location.pathname.includes('/appointments') ? (
+        <div>
+          <h3>All Appointments</h3>
+          {appointments.length ? (
+            <Row>
+              {appointments.map(a => (
+                <Col md={4} key={a.id}>
+                  <AppointmentCard appointment={a} onCancel={handleCancel} />
+                  {a.status === 'pending' && (
+                    <div className="mt-2">
+                      <Button variant="success" onClick={() => handleApprove(a.id)} className="me-2">Approve</Button>
+                      <Button variant="warning" onClick={() => handleReject(a.id)}>Reject</Button>
+                    </div>
+                  )}
+                </Col>
+              ))}
+            </Row>
+          ) : (
+            <p>No appointments found.</p>
+          )}
+        </div>
+      ) : (
+        <div>
+          <h3>Patients</h3>
+          <Button variant="primary" as={Link} to="/dashboard/patients/new" className="mb-3">Add Patient</Button>
+          {patients.length ? (
             <Table striped bordered hover>
               <thead>
                 <tr>
@@ -143,156 +281,12 @@ function AdminDashboard() {
                 ))}
               </tbody>
             </Table>
-          </div>
-        }
-      />
-      <Route
-        path="/patients/new"
-        element={
-          <div>
-            <h3>Add New Patient</h3>
-            <Form onSubmit={handleCreatePatient}>
-              <Form.Group className="mb-3">
-                <Form.Label>Name</Form.Label>
-                <Form.Control
-                  type="text"
-                  value={newPatient.name}
-                  onChange={(e) => setNewPatient({ ...newPatient, name: e.target.value })}
-                  required
-                />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Email</Form.Label>
-                <Form.Control
-                  type="email"
-                  value={newPatient.email}
-                  onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })}
-                  required
-                />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Phone</Form.Label>
-                <Form.Control
-                  type="text"
-                  value={newPatient.phone}
-                  onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })}
-                  required
-                />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Password</Form.Label>
-                <Form.Control
-                  type="password"
-                  value={newPatient.password}
-                  onChange={(e) => setNewPatient({ ...newPatient, password: e.target.value })}
-                  required
-                />
-              </Form.Group>
-              <Button variant="primary" type="submit">Create Patient</Button>
-            </Form>
-          </div>
-        }
-      />
-      <Route
-        path="/doctors"
-        element={
-          <div>
-            <h3>Doctors</h3>
-            <Button variant="primary" href="/dashboard/doctors/new" className="mb-3">Add Doctor</Button>
-            <Table striped bordered hover>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Specialization</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {doctors.map(d => (
-                  <tr key={d.id}>
-                    <td>{d.id}</td>
-                    <td>{d.name}</td>
-                    <td>{d.specialization}</td>
-                    <td>
-                      <Button variant="danger" onClick={() => handleDeleteDoctor(d.id)}>Delete</Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </div>
-        }
-      />
-      <Route
-        path="/doctors/new"
-        element={
-          <div>
-            <h3>Add New Doctor</h3>
-            <Form onSubmit={handleCreateDoctor}>
-              <Form.Group className="mb-3">
-                <Form.Label>Name</Form.Label>
-                <Form.Control
-                  type="text"
-                  value={newDoctor.name}
-                  onChange={(e) => setNewDoctor({ ...newDoctor, name: e.target.value })}
-                  required
-                />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Specialization</Form.Label>
-                <Form.Control
-                  type="text"
-                  value={newDoctor.specialization}
-                  onChange={(e) => setNewDoctor({ ...newDoctor, specialization: e.target.value })}
-                  required
-                />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Email</Form.Label>
-                <Form.Control
-                  type="email"
-                  value={newDoctor.email}
-                  onChange={(e) => setNewDoctor({ ...newDoctor, email: e.target.value })}
-                  required
-                />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Password</Form.Label>
-                <Form.Control
-                  type="password"
-                  value={newDoctor.password}
-                  onChange={(e) => setNewDoctor({ ...newDoctor, password: e.target.value })}
-                  required
-                />
-              </Form.Group>
-              <Button variant="primary" type="submit">Create Doctor</Button>
-            </Form>
-          </div>
-        }
-      />
-      <Route
-        path="/appointments"
-        element={
-          <div>
-            <h3>All Appointments</h3>
-            <Row>
-              {appointments.map(a => (
-                <Col md={4} key={a.id}>
-                  <AppointmentCard appointment={a} onCancel={handleCancel} />
-                  {a.status === 'pending' && (
-                    <div className="mt-2">
-                      <Button variant="success" onClick={() => handleApprove(a.id)} className="me-2">Approve</Button>
-                      <Button variant="warning" onClick={() => handleReject(a.id)}>Reject</Button>
-                    </div>
-                  )}
-                </Col>
-              ))}
-            </Row>
-          </div>
-        }
-      />
-    </Routes>
+          ) : (
+            <p>No patients found.</p>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
