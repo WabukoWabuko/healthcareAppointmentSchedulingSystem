@@ -6,32 +6,46 @@ import { useLocation } from 'react-router-dom';
 import AppointmentCard from '../components/AppointmentCard';
 
 function DoctorDashboard() {
-  const { token } = useContext(AuthContext);
+  const { token, user } = useContext(AuthContext);
   const [appointments, setAppointments] = useState([]);
   const [availability, setAvailability] = useState([]);
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [doctorId, setDoctorId] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(true);
   const location = useLocation();
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!token || !user) {
+        console.log('No token or user available:', { token, user });
+        setErrorMessage('Please log in to view your dashboard.');
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
       const config = { headers: { Authorization: `Bearer ${token}` } };
       try {
+        console.log('Fetching data for doctor dashboard...');
         const [apptRes, doctorRes] = await Promise.all([
           axios.get('http://127.0.0.1:8000/api/appointments/', config),
           axios.get('http://127.0.0.1:8000/api/doctors/', config),
         ]);
-        const doctorId = doctorRes.data[0]?.id;
+        const doctor = doctorRes.data.find(d => d.user === user.id);
+        const doctorId = doctor?.id;
         if (!doctorId) {
-          console.error('No doctor ID found for the logged-in user.');
+          console.error('No doctor ID found for the logged-in user:', user.email);
+          setErrorMessage('No doctor profile found for this user.');
+          setLoading(false);
           return;
         }
         const availRes = await axios.get(`http://127.0.0.1:8000/api/doctors/${doctorId}/availability/`, config);
+        console.log('User:', user);
         console.log('Doctor ID:', doctorId);
-        console.log('Appointments:', apptRes.data);
-        console.log('Availability:', availRes.data);
+        console.log('Appointments Response:', apptRes.data);
+        console.log('Availability Response:', availRes.data);
         setAppointments(apptRes.data.map(appt => ({
           ...appt,
           patient_name: appt.patient_name || 'Unknown',
@@ -40,10 +54,13 @@ function DoctorDashboard() {
         setDoctorId(doctorId);
       } catch (error) {
         console.error('Error fetching doctor data:', error.response?.data || error.message);
+        setErrorMessage('Failed to load data: ' + (error.response?.data?.detail || error.message));
+      } finally {
+        setLoading(false);
       }
     };
-    if (token) fetchData();
-  }, [token]);
+    fetchData();
+  }, [token, user]);
 
   const handleAddAvailability = async (e) => {
     e.preventDefault();
@@ -77,7 +94,9 @@ function DoctorDashboard() {
 
   return (
     <div>
-      {location.pathname.includes('/availability') ? (
+      {loading ? (
+        <div>Loading...</div>
+      ) : location.pathname.includes('/availability') ? (
         <div>
           <h3>Manage Availability</h3>
           {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
@@ -109,18 +128,23 @@ function DoctorDashboard() {
           </Row>
           <h4 className="mt-4">Your Availability</h4>
           <Row>
-            {availability.map(a => (
-              <Col md={4} key={a.id}>
-                <Card className="mb-3">
-                  <Card.Body>{a.start_time} - {a.end_time}</Card.Body>
-                </Card>
-              </Col>
-            ))}
+            {availability.length ? (
+              availability.map(a => (
+                <Col md={4} key={a.id}>
+                  <Card className="mb-3">
+                    <Card.Body>{a.start_time} - {a.end_time}</Card.Body>
+                  </Card>
+                </Col>
+              ))
+            ) : (
+              <p>No availability slots found.</p>
+            )}
           </Row>
         </div>
       ) : (
         <div>
           <h3>Your Appointments</h3>
+          {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
           <Row>
             {appointments.length ? (
               appointments.map(a => (

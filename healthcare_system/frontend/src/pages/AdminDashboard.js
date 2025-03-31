@@ -6,117 +6,172 @@ import { useLocation, Link } from 'react-router-dom';
 import AppointmentCard from '../components/AppointmentCard';
 
 function AdminDashboard() {
-  const { token } = useContext(AuthContext);
+  const { token, user } = useContext(AuthContext);
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [newPatient, setNewPatient] = useState({ name: '', email: '', phone: '', password: '' });
   const [newDoctor, setNewDoctor] = useState({ name: '', specialization: '', email: '', password: '' });
+  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(true);
   const location = useLocation();
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!token || !user) {
+        console.log('No token or user available:', { token, user });
+        setErrorMessage('Please log in to view your dashboard.');
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
       const config = { headers: { Authorization: `Bearer ${token}` } };
       try {
+        console.log('Fetching data for admin dashboard...');
         const [patRes, docRes, apptRes] = await Promise.all([
           axios.get('http://127.0.0.1:8000/api/patients/', config),
           axios.get('http://127.0.0.1:8000/api/doctors/', config),
           axios.get('http://127.0.0.1:8000/api/appointments/', config),
         ]);
-        console.log('Patients:', patRes.data);
-        console.log('Doctors:', docRes.data);
-        console.log('Appointments:', apptRes.data);
+        console.log('User:', user);
+        console.log('Patients Response:', patRes.data);
+        console.log('Doctors Response:', docRes.data);
+        console.log('Appointments Response:', apptRes.data);
         setPatients(patRes.data);
         setDoctors(docRes.data);
         setAppointments(apptRes.data.map(appt => ({
           ...appt,
-          patient_name: patRes.data.find(p => p.id === appt.patient)?.name,
-          doctor_name: docRes.data.find(d => d.id === appt.doctor)?.name,
+          patient_name: patRes.data.find(p => p.id === appt.patient)?.name || 'Unknown',
+          doctor_name: docRes.data.find(d => d.id === appt.doctor)?.name || 'Unknown',
         })));
       } catch (error) {
         console.error('Error fetching admin data:', error.response?.data || error.message);
+        setErrorMessage('Failed to load data: ' + (error.response?.data?.detail || error.message));
+      } finally {
+        setLoading(false);
       }
     };
-    if (token) fetchData();
-  }, [token]);
+    fetchData();
+  }, [token, user]);
 
   const handleCancel = async (id) => {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    await axios.delete(`http://127.0.0.1:8000/api/appointments/${id}/`, config);
-    setAppointments(appointments.filter(a => a.id !== id));
+    try {
+      await axios.delete(`http://127.0.0.1:8000/api/appointments/${id}/`, config);
+      setAppointments(appointments.filter(a => a.id !== id));
+    } catch (error) {
+      console.error('Error cancelling appointment:', error);
+      setErrorMessage('Failed to cancel appointment: ' + (error.response?.data?.detail || 'Unknown error'));
+    }
   };
 
   const handleApprove = async (id) => {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    await axios.patch(`http://127.0.0.1:8000/api/appointments/${id}/`, { status: 'confirmed' }, config);
-    setAppointments(appointments.map(a => (a.id === id ? { ...a, status: 'confirmed' } : a)));
+    try {
+      await axios.patch(`http://127.0.0.1:8000/api/appointments/${id}/`, { status: 'confirmed' }, config);
+      setAppointments(appointments.map(a => (a.id === id ? { ...a, status: 'confirmed' } : a)));
+    } catch (error) {
+      console.error('Error approving appointment:', error);
+      setErrorMessage('Failed to approve appointment: ' + (error.response?.data?.detail || 'Unknown error'));
+    }
   };
 
   const handleReject = async (id) => {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    await axios.patch(`http://127.0.0.1:8000/api/appointments/${id}/`, { status: 'cancelled' }, config);
-    setAppointments(appointments.map(a => (a.id === id ? { ...a, status: 'cancelled' } : a)));
+    try {
+      await axios.patch(`http://127.0.0.1:8000/api/appointments/${id}/`, { status: 'cancelled' }, config);
+      setAppointments(appointments.map(a => (a.id === id ? { ...a, status: 'cancelled' } : a)));
+    } catch (error) {
+      console.error('Error rejecting appointment:', error);
+      setErrorMessage('Failed to reject appointment: ' + (error.response?.data?.detail || 'Unknown error'));
+    }
   };
 
   const handleDeletePatient = async (id) => {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    await axios.delete(`http://127.0.0.1:8000/api/patients/${id}/`, config);
-    setPatients(patients.filter(p => p.id !== id));
+    try {
+      await axios.delete(`http://127.0.0.1:8000/api/patients/${id}/`, config);
+      setPatients(patients.filter(p => p.id !== id));
+    } catch (error) {
+      console.error('Error deleting patient:', error);
+      setErrorMessage('Failed to delete patient: ' + (error.response?.data?.detail || 'Unknown error'));
+    }
   };
 
   const handleDeleteDoctor = async (id) => {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    await axios.delete(`http://127.0.0.1:8000/api/doctors/${id}/`, config);
-    setDoctors(doctors.filter(d => d.id !== id));
+    try {
+      await axios.delete(`http://127.0.0.1:8000/api/doctors/${id}/`, config);
+      setDoctors(doctors.filter(d => d.id !== id));
+    } catch (error) {
+      console.error('Error deleting doctor:', error);
+      setErrorMessage('Failed to delete doctor: ' + (error.response?.data?.detail || 'Unknown error'));
+    }
   };
 
   const handleCreatePatient = async (e) => {
     e.preventDefault();
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    const userData = {
-      email: newPatient.email,
-      username: newPatient.email.split('@')[0],
-      password: newPatient.password,
-      role: 'patient',
-    };
-    const userRes = await axios.post('http://127.0.0.1:8000/api/auth/users/', userData, config);
-    const patientData = {
-      user: userRes.data.id,
-      name: newPatient.name,
-      email: newPatient.email,
-      phone: newPatient.phone,
-      insurance_id: 'INS_NEW',
-    };
-    const patientRes = await axios.post('http://127.0.0.1:8000/api/patients/', patientData, config);
-    setPatients([...patients, patientRes.data]);
-    setNewPatient({ name: '', email: '', phone: '', password: '' });
+    try {
+      const userData = {
+        email: newPatient.email,
+        username: newPatient.email.split('@')[0],
+        password: newPatient.password,
+        role: 'patient',
+      };
+      const userRes = await axios.post('http://127.0.0.1:8000/api/auth/users/', userData, config);
+      const patientData = {
+        user: userRes.data.id,
+        name: newPatient.name,
+        email: newPatient.email,
+        phone: newPatient.phone,
+        insurance_id: 'INS_NEW',
+      };
+      const patientRes = await axios.post('http://127.0.0.1:8000/api/patients/', patientData, config);
+      setPatients([...patients, patientRes.data]);
+      setNewPatient({ name: '', email: '', phone: '', password: '' });
+      setErrorMessage('');
+    } catch (error) {
+      console.error('Error creating patient:', error);
+      setErrorMessage('Failed to create patient: ' + (error.response?.data?.detail || 'Unknown error'));
+    }
   };
 
   const handleCreateDoctor = async (e) => {
     e.preventDefault();
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    const userData = {
-      email: newDoctor.email,
-      username: newDoctor.email.split('@')[0],
-      password: newDoctor.password,
-      role: 'doctor',
-    };
-    const userRes = await axios.post('http://127.0.0.1:8000/api/auth/users/', userData, config);
-    const doctorData = {
-      user: userRes.data.id,
-      name: newDoctor.name,
-      specialization: newDoctor.specialization,
-    };
-    const doctorRes = await axios.post('http://127.0.0.1:8000/api/doctors/', doctorData, config);
-    setDoctors([...doctors, doctorRes.data]);
-    setNewDoctor({ name: '', specialization: '', email: '', password: '' });
+    try {
+      const userData = {
+        email: newDoctor.email,
+        username: newDoctor.email.split('@')[0],
+        password: newDoctor.password,
+        role: 'doctor',
+      };
+      const userRes = await axios.post('http://127.0.0.1:8000/api/auth/users/', userData, config);
+      const doctorData = {
+        user: userRes.data.id,
+        name: newDoctor.name,
+        specialization: newDoctor.specialization,
+      };
+      const doctorRes = await axios.post('http://127.0.0.1:8000/api/doctors/', doctorData, config);
+      setDoctors([...doctors, doctorRes.data]);
+      setNewDoctor({ name: '', specialization: '', email: '', password: '' });
+      setErrorMessage('');
+    } catch (error) {
+      console.error('Error creating doctor:', error);
+      setErrorMessage('Failed to create doctor: ' + (error.response?.data?.detail || 'Unknown error'));
+    }
   };
 
   return (
     <div>
-      {location.pathname.includes('/patients/new') ? (
+      {loading ? (
+        <div>Loading...</div>
+      ) : location.pathname.includes('/patients/new') ? (
         <div>
           <h3>Add New Patient</h3>
+          {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
           <Form onSubmit={handleCreatePatient}>
             <Form.Group className="mb-3">
               <Form.Label>Name</Form.Label>
@@ -160,6 +215,7 @@ function AdminDashboard() {
       ) : location.pathname.includes('/doctors/new') ? (
         <div>
           <h3>Add New Doctor</h3>
+          {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
           <Form onSubmit={handleCreateDoctor}>
             <Form.Group className="mb-3">
               <Form.Label>Name</Form.Label>
@@ -203,6 +259,7 @@ function AdminDashboard() {
       ) : location.pathname.includes('/doctors') ? (
         <div>
           <h3>Doctors</h3>
+          {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
           <Button variant="primary" as={Link} to="/dashboard/doctors/new" className="mb-3">Add Doctor</Button>
           {doctors.length ? (
             <Table striped bordered hover>
@@ -234,6 +291,7 @@ function AdminDashboard() {
       ) : location.pathname.includes('/appointments') ? (
         <div>
           <h3>All Appointments</h3>
+          {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
           {appointments.length ? (
             <Row>
               {appointments.map(a => (
@@ -255,6 +313,7 @@ function AdminDashboard() {
       ) : (
         <div>
           <h3>Patients</h3>
+          {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
           <Button variant="primary" as={Link} to="/dashboard/patients/new" className="mb-3">Add Patient</Button>
           {patients.length ? (
             <Table striped bordered hover>

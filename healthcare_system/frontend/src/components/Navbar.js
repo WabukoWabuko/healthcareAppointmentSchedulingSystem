@@ -1,31 +1,47 @@
-import { Navbar as BSNavbar, Nav, Button } from 'react-bootstrap';
 import { useContext } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 
 function Navbar() {
-  const { user, logout } = useContext(AuthContext);
+  const { user, token, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
-    <BSNavbar bg="primary" variant="dark" expand="lg" className="mb-4">
-      <BSNavbar.Brand href="#home">Healthcare Scheduler</BSNavbar.Brand>
-      <BSNavbar.Toggle aria-controls="basic-navbar-nav" />
-      <BSNavbar.Collapse id="basic-navbar-nav">
-        <Nav className="ms-auto">
-          {user ? (
-            <>
-              <Nav.Link disabled>Welcome, {user.email} ({user.role})</Nav.Link>
-              <Button variant="outline-light" onClick={() => { logout(); navigate('/'); }}>
-                Logout
-              </Button>
-            </>
-          ) : (
-            <Nav.Link href="/">Login</Nav.Link>
-          )}
-        </Nav>
-      </BSNavbar.Collapse>
-    </BSNavbar>
+    <nav className="navbar">
+      <Link to="/" className="navbar-brand">Healthcare System</Link>
+      {token && user && (
+        <>
+          <div className="navbar-links">
+            {user.role === 'patient' && (
+              <>
+                <Link to="/dashboard/appointments">Appointments</Link>
+                <Link to="/dashboard/book">Book Appointment</Link>
+              </>
+            )}
+            {user.role === 'doctor' && (
+              <>
+                <Link to="/doctor-dashboard/appointments">Appointments</Link>
+                <Link to="/doctor-dashboard/availability">Availability</Link>
+              </>
+            )}
+            {user.role === 'admin' && (
+              <>
+                <Link to="/admin-dashboard/patients">Patients</Link>
+                <Link to="/admin-dashboard/doctors">Doctors</Link>
+                <Link to="/admin-dashboard/appointments">Appointments</Link>
+              </>
+            )}
+          </div>
+          <button className="logout-btn" onClick={handleLogout}>Logout</button>
+        </>
+      )}
+    </nav>
   );
 }
+
 export default Navbar;

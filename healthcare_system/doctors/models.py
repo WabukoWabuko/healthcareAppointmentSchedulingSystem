@@ -1,18 +1,16 @@
 from django.db import models
-from django.conf import settings
+from users.models import CustomUser
 
 class Doctor(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='doctor')
     name = models.CharField(max_length=100)
     specialization = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Dr. {self.name} ({self.specialization})"
+        return self.name
 
 class Availability(models.Model):
-    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name="availabilities")
+    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name='availabilities')
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
 

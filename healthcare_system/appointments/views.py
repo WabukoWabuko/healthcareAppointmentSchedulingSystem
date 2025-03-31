@@ -17,24 +17,24 @@ class AppointmentViewSet(viewsets.ModelViewSet):
                 patient = user.patient
                 return Appointment.objects.filter(patient=patient)
             except AttributeError:
+                print(f"No patient profile found for user: {user.email}")
                 return Appointment.objects.none()
         elif user.role == 'doctor':
             try:
                 doctor = user.doctor
                 return Appointment.objects.filter(doctor=doctor)
             except AttributeError:
+                print(f"No doctor profile found for user: {user.email}")
                 return Appointment.objects.none()
         elif user.role == 'admin':
             return Appointment.objects.all()
         return Appointment.objects.none()
 
     def perform_create(self, serializer):
-        # Extract appointment data
         appointment_data = serializer.validated_data
         doctor = appointment_data['doctor']
         appointment_time = appointment_data['datetime']
 
-        # Step 1: Check if the appointment time falls within the doctor's availability
         doctor_availability = Availability.objects.filter(
             doctor=doctor,
             start_time__lte=appointment_time,
@@ -46,20 +46,16 @@ class AppointmentViewSet(viewsets.ModelViewSet):
                 'datetime': 'The selected time is outside the doctor’s availability.'
             })
 
-        # Step 2: Check for overlapping appointments (double-booking)
-        # Assume appointments are 30 minutes long for simplicity
         appointment_end_time = appointment_time + timezone.timedelta(minutes=30)
-
         overlapping_appointments = Appointment.objects.filter(
             doctor=doctor,
-            datetime__lt=appointment_end_time,  # Starts before the new appointment ends
-            datetime__gte=appointment_time     # Ends after the new appointment starts
-        ).exclude(id=self.request.data.get('id'))  # Exclude the current appointment if updating
+            datetime__lt=appointment_end_time,
+            datetime__gte=appointment_time
+        ).exclude(id=self.request.data.get('id'))
 
         if overlapping_appointments.exists():
             raise ValidationError({
                 'datetime': 'The doctor already has an appointment at this time.'
             })
 
-        # If all checks pass, save the appointment
         serializer.save()
