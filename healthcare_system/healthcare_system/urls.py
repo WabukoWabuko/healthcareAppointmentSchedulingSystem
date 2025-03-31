@@ -4,6 +4,7 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+from rest_framework.permissions import AllowAny  # Imported AllowAny
 
 # Create a custom view to explicitly set permissions
 class PublicTokenObtainPairView(TokenObtainPairView):
