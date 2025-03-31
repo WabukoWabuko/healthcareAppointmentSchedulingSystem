@@ -12,6 +12,7 @@ function PatientDashboard() {
   const [doctorId, setDoctorId] = useState('');
   const [datetime, setDatetime] = useState('');
   const [patientId, setPatientId] = useState('');
+  const [errorMessage, setErrorMessage] = useState(''); // Add state for error messages
 
   useEffect(() => {
     const fetchData = async () => {
@@ -50,9 +51,12 @@ function PatientDashboard() {
       setAppointments([...appointments, { ...res.data, doctor_name: doctors.find(d => d.id === res.data.doctor).name }]);
       setDoctorId('');
       setDatetime('');
+      setErrorMessage(''); // Clear error message on success
     } catch (error) {
       console.error('Error booking appointment:', error);
-      alert('Failed to book appointment: ' + (error.response?.data?.detail || 'Unknown error'));
+      // Display specific error message from backend
+      const errorDetail = error.response?.data?.datetime || error.response?.data?.detail || 'Unknown error';
+      setErrorMessage(`Failed to book appointment: ${errorDetail}`);
     }
   };
 
@@ -63,7 +67,7 @@ function PatientDashboard() {
       setAppointments(appointments.filter(a => a.id !== id));
     } catch (error) {
       console.error('Error cancelling appointment:', error);
-      alert('Failed to cancel appointment: ' + (error.response?.data?.detail || 'Unknown error'));
+      setErrorMessage('Failed to cancel appointment: ' + (error.response?.data?.detail || 'Unknown error'));
     }
   };
 
@@ -93,12 +97,13 @@ function PatientDashboard() {
         element={
           <div>
             <h3>Book an Appointment</h3>
+            {errorMessage && <div className="alert alert-danger">{errorMessage}</div>} {/* Display error message */}
             <Row>
               <Col md={6}>
                 <Form onSubmit={handleBook}>
                   <Form.Group className="mb-3">
                     <Form.Label>Doctor</Form.Label>
-                    <Form.Select value={doctorId} onChange={(e) => setDoctorId(e.target.value)}>
+                    <Form.Select value={doctorId} onChange={(e) => setDoctorId(e.target.value)} required>
                       <option value="">Select Doctor</option>
                       {doctors.map(d => (
                         <option key={d.id} value={d.id}>{d.name} ({d.specialization})</option>
@@ -111,6 +116,7 @@ function PatientDashboard() {
                       type="datetime-local"
                       value={datetime}
                       onChange={(e) => setDatetime(e.target.value)}
+                      required
                     />
                   </Form.Group>
                   <Button variant="primary" type="submit">Book</Button>
