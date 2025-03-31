@@ -5,7 +5,6 @@ class Doctor(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='doctor')
     name = models.CharField(max_length=100)
     specialization = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)  # Automatically set on creation
 
     def __str__(self):
         return self.name

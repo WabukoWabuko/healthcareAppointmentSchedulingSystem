@@ -9,12 +9,9 @@ class PatientViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.role == 'patient':
-            try:
+        if user.is_authenticated:
+            if user.role == 'admin':
+                return Patient.objects.all()
+            elif user.role == 'patient':
                 return Patient.objects.filter(user=user)
-            except AttributeError:
-                print(f"No patient profile found for user: {user.email}")
-                return Patient.objects.none()
-        elif user.role == 'admin':
-            return Patient.objects.all()
         return Patient.objects.none()

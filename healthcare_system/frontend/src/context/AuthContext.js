@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';  // Use the new Axios instance
 
 export const AuthContext = createContext();
 
@@ -11,9 +11,7 @@ export const AuthProvider = ({ children }) => {
     const fetchUser = async () => {
       if (token) {
         try {
-          const res = await axios.get('http://127.0.0.1:8000/api/auth/users/me/', {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          const res = await api.get('/api/auth/users/me/');
           setUser(res.data);
         } catch (error) {
           console.error('Error fetching user:', error);
@@ -28,16 +26,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const res = await axios.post('http://127.0.0.1:8000/api/auth/jwt/create/', { email, password });
+      const res = await api.post('/api/auth/jwt/create/', { email, password });
       const accessToken = res.data.access;
       setToken(accessToken);
       localStorage.setItem('token', accessToken);
-      // Fetch user data immediately after login
-      const userRes = await axios.get('http://127.0.0.1:8000/api/auth/users/me/', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      const userRes = await api.get('/api/auth/users/me/');
       setUser(userRes.data);
-      return userRes.data; // Return user data for immediate use
+      return userRes.data;
     } catch (error) {
       console.error('Error logging in:', error);
       throw error;

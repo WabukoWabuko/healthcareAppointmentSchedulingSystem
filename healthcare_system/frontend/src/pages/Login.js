@@ -14,7 +14,6 @@ function Login() {
     e.preventDefault();
     try {
       const user = await login(email, password);
-      // Redirect based on user role
       if (user.role === 'patient') {
         navigate('/dashboard/appointments');
       } else if (user.role === 'doctor') {
