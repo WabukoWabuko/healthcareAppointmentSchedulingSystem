@@ -1,24 +1,32 @@
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
 from .models import Appointment
 from .serializers import AppointmentSerializer
-from .tasks import send_appointment_notification
+from rest_framework.permissions import IsAuthenticated
 
 class AppointmentViewSet(viewsets.ModelViewSet):
-    queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
         if user.role == 'patient':
-            return Appointment.objects.filter(patient__user=user)
+            # Patients should see only their own appointments
+            try:
+                patient = user.patient
+                return Appointment.objects.filter(patient=patient)
+            except AttributeError:
+                return Appointment.objects.none()
         elif user.role == 'doctor':
-            return Appointment.objects.filter(doctor__user=user)
+            # Doctors should see only their own appointments
+            try:
+                doctor = user.doctor
+                return Appointment.objects.filter(doctor=doctor)
+            except AttributeError:
+                return Appointment.objects.none()
         elif user.role == 'admin':
+            # Admins see all appointments
             return Appointment.objects.all()
         return Appointment.objects.none()
 
     def perform_create(self, serializer):
-        appointment = serializer.save()
-        send_appointment_notification.delay(appointment.id)  # Async task
+        serializer.save()

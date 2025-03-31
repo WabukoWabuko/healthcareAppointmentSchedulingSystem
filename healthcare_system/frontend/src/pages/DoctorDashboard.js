@@ -1,8 +1,8 @@
 import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
-import { Form, Button, Row, Col, Card } from 'react-bootstrap'; // Removed Routes from here
-import { Routes, Route } from 'react-router-dom'; // Added correct import
+import { Form, Button, Row, Col, Card } from 'react-bootstrap';
+import { Routes, Route } from 'react-router-dom';
 import AppointmentCard from '../components/AppointmentCard';
 
 function DoctorDashboard() {
@@ -16,18 +16,29 @@ function DoctorDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      const [apptRes, doctorRes] = await Promise.all([
-        axios.get('http://127.0.0.1:8000/api/appointments/', config),
-        axios.get('http://127.0.0.1:8000/api/doctors/', config),
-      ]);
-      const doctorId = doctorRes.data[0].id;
-      const availRes = await axios.get(`http://127.0.0.1:8000/api/doctors/${doctorId}/availability/`, config);
-      setAppointments(apptRes.data.map(appt => ({
-        ...appt,
-        patient_name: appt.patient_name || 'Unknown', // Adjust if backend provides this
-      })));
-      setAvailability(availRes.data);
-      setDoctorId(doctorId);
+      try {
+        const [apptRes, doctorRes] = await Promise.all([
+          axios.get('http://127.0.0.1:8000/api/appointments/', config),
+          axios.get('http://127.0.0.1:8000/api/doctors/', config),
+        ]);
+        const doctorId = doctorRes.data[0]?.id;
+        if (!doctorId) {
+          console.error('No doctor ID found for the logged-in user.');
+          return;
+        }
+        const availRes = await axios.get(`http://127.0.0.1:8000/api/doctors/${doctorId}/availability/`, config);
+        console.log('Doctor ID:', doctorId);
+        console.log('Appointments:', apptRes.data);
+        console.log('Availability:', availRes.data);
+        setAppointments(apptRes.data.map(appt => ({
+          ...appt,
+          patient_name: appt.patient_name || 'Unknown',
+        })));
+        setAvailability(availRes.data);
+        setDoctorId(doctorId);
+      } catch (error) {
+        console.error('Error fetching doctor data:', error.response?.data || error.message);
+      }
     };
     if (token) fetchData();
   }, [token]);
@@ -35,20 +46,30 @@ function DoctorDashboard() {
   const handleAddAvailability = async (e) => {
     e.preventDefault();
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    const res = await axios.post(
-      `http://127.0.0.1:8000/api/doctors/${doctorId}/availability/`,
-      { start_time: startTime, end_time: endTime },
-      config
-    );
-    setAvailability([...availability, res.data]);
-    setStartTime('');
-    setEndTime('');
+    try {
+      const res = await axios.post(
+        `http://127.0.0.1:8000/api/doctors/${doctorId}/availability/`,
+        { start_time: startTime, end_time: endTime },
+        config
+      );
+      setAvailability([...availability, res.data]);
+      setStartTime('');
+      setEndTime('');
+    } catch (error) {
+      console.error('Error adding availability:', error);
+      alert('Failed to add availability: ' + (error.response?.data?.detail || 'Unknown error'));
+    }
   };
 
   const handleCancel = async (id) => {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    await axios.delete(`http://127.0.0.1:8000/api/appointments/${id}/`, config);
-    setAppointments(appointments.filter(a => a.id !== id));
+    try {
+      await axios.delete(`http://127.0.0.1:8000/api/appointments/${id}/`, config);
+      setAppointments(appointments.filter(a => a.id !== id));
+    } catch (error) {
+      console.error('Error cancelling appointment:', error);
+      alert('Failed to cancel appointment: ' + (error.response?.data?.detail || 'Unknown error'));
+    }
   };
 
   return (

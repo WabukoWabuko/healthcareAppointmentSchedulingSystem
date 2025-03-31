@@ -1,8 +1,8 @@
 import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
-import { Form, Button, Row, Col } from 'react-bootstrap'; // Removed Routes from here
-import { Routes, Route } from 'react-router-dom'; // Added correct import
+import { Form, Button, Row, Col } from 'react-bootstrap';
+import { Routes, Route } from 'react-router-dom';
 import AppointmentCard from '../components/AppointmentCard';
 
 function PatientDashboard() {
@@ -16,17 +16,24 @@ function PatientDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      const [docRes, apptRes, patientRes] = await Promise.all([
-        axios.get('http://127.0.0.1:8000/api/doctors/', config),
-        axios.get('http://127.0.0.1:8000/api/appointments/', config),
-        axios.get('http://127.0.0.1:8000/api/patients/', config),
-      ]);
-      setDoctors(docRes.data);
-      setAppointments(apptRes.data.map(appt => ({
-        ...appt,
-        doctor_name: docRes.data.find(d => d.id === appt.doctor)?.name,
-      })));
-      setPatientId(patientRes.data[0].id);
+      try {
+        const [docRes, apptRes, patientRes] = await Promise.all([
+          axios.get('http://127.0.0.1:8000/api/doctors/', config),
+          axios.get('http://127.0.0.1:8000/api/appointments/', config),
+          axios.get('http://127.0.0.1:8000/api/patients/', config),
+        ]);
+        console.log('Doctors:', docRes.data);
+        console.log('Appointments:', apptRes.data);
+        console.log('Patient:', patientRes.data);
+        setDoctors(docRes.data);
+        setAppointments(apptRes.data.map(appt => ({
+          ...appt,
+          doctor_name: docRes.data.find(d => d.id === appt.doctor)?.name,
+        })));
+        setPatientId(patientRes.data[0]?.id || '');
+      } catch (error) {
+        console.error('Error fetching patient data:', error.response?.data || error.message);
+      }
     };
     if (token) fetchData();
   }, [token]);

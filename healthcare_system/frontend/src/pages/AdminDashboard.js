@@ -16,18 +16,25 @@ function AdminDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      const [patRes, docRes, apptRes] = await Promise.all([
-        axios.get('http://127.0.0.1:8000/api/patients/', config),
-        axios.get('http://127.0.0.1:8000/api/doctors/', config),
-        axios.get('http://127.0.0.1:8000/api/appointments/', config),
-      ]);
-      setPatients(patRes.data);
-      setDoctors(docRes.data);
-      setAppointments(apptRes.data.map(appt => ({
-        ...appt,
-        patient_name: patRes.data.find(p => p.id === appt.patient)?.name,
-        doctor_name: docRes.data.find(d => d.id === appt.doctor)?.name,
-      })));
+      try {
+        const [patRes, docRes, apptRes] = await Promise.all([
+          axios.get('http://127.0.0.1:8000/api/patients/', config),
+          axios.get('http://127.0.0.1:8000/api/doctors/', config),
+          axios.get('http://127.0.0.1:8000/api/appointments/', config),
+        ]);
+        console.log('Patients:', patRes.data);
+        console.log('Doctors:', docRes.data);
+        console.log('Appointments:', apptRes.data);
+        setPatients(patRes.data);
+        setDoctors(docRes.data);
+        setAppointments(apptRes.data.map(appt => ({
+          ...appt,
+          patient_name: patRes.data.find(p => p.id === appt.patient)?.name,
+          doctor_name: docRes.data.find(d => d.id === appt.doctor)?.name,
+        })));
+      } catch (error) {
+        console.error('Error fetching admin data:', error.response?.data || error.message);
+      }
     };
     if (token) fetchData();
   }, [token]);
@@ -40,13 +47,13 @@ function AdminDashboard() {
 
   const handleApprove = async (id) => {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    await axios.patch(`http://127.0.0.1:8000/api/appointments/${id}/`, { status: 'confirmed' }, config); // Removed unused updatedAppt
+    await axios.patch(`http://127.0.0.1:8000/api/appointments/${id}/`, { status: 'confirmed' }, config);
     setAppointments(appointments.map(a => (a.id === id ? { ...a, status: 'confirmed' } : a)));
   };
 
   const handleReject = async (id) => {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    await axios.patch(`http://127.0.0.1:8000/api/appointments/${id}/`, { status: 'cancelled' }, config); // Removed unused updatedAppt
+    await axios.patch(`http://127.0.0.1:8000/api/appointments/${id}/`, { status: 'cancelled' }, config);
     setAppointments(appointments.map(a => (a.id === id ? { ...a, status: 'cancelled' } : a)));
   };
 
@@ -67,7 +74,7 @@ function AdminDashboard() {
     const config = { headers: { Authorization: `Bearer ${token}` } };
     const userData = {
       email: newPatient.email,
-      username: newPatient.email.split('@')[0], // Simple username from email
+      username: newPatient.email.split('@')[0],
       password: newPatient.password,
       role: 'patient',
     };
@@ -77,7 +84,7 @@ function AdminDashboard() {
       name: newPatient.name,
       email: newPatient.email,
       phone: newPatient.phone,
-      insurance_id: 'INS_NEW', // Placeholder, adjust as needed
+      insurance_id: 'INS_NEW',
     };
     const patientRes = await axios.post('http://127.0.0.1:8000/api/patients/', patientData, config);
     setPatients([...patients, patientRes.data]);
@@ -89,7 +96,7 @@ function AdminDashboard() {
     const config = { headers: { Authorization: `Bearer ${token}` } };
     const userData = {
       email: newDoctor.email,
-      username: newDoctor.email.split('@')[0], // Simple username from email
+      username: newDoctor.email.split('@')[0],
       password: newDoctor.password,
       role: 'doctor',
     };
