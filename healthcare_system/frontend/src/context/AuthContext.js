@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
         withCredentials: true,
       });
       setUser(userRes.data);
-      return userRes.data;
+      return userRes.data; // Return user data for redirection
     } catch (error) {
       console.error('Error logging in:', error);
       throw error;

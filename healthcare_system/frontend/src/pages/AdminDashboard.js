@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext } from 'reactV2 from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
@@ -7,7 +7,7 @@ import { Table } from 'react-bootstrap';
 function AdminDashboard() {
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
-  const { token } = useContext(AuthContext);
+  const { user, token } = useContext(AuthContext);
   const location = useLocation();
 
   useEffect(() => {
@@ -17,6 +17,7 @@ function AdminDashboard() {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         });
+        console.log('Patients:', res.data); // Debug log
         setPatients(res.data);
       } catch (error) {
         console.error('Error fetching patients:', error);
@@ -29,22 +30,29 @@ function AdminDashboard() {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         });
+        console.log('Doctors:', res.data); // Debug log
         setDoctors(res.data);
       } catch (error) {
         console.error('Error fetching doctors:', error);
       }
     };
 
-    if (location.pathname === '/admin-dashboard/patients') {
-      fetchPatients();
-    } else if (location.pathname === '/admin-dashboard/doctors') {
-      fetchDoctors();
+    if (user && token) {
+      if (location.pathname === '/admin-dashboard/patients') {
+        fetchPatients();
+      } else if (location.pathname === '/admin-dashboard/doctors') {
+        fetchDoctors();
+      }
     }
-  }, [location, token]);
+  }, [location, user, token]);
+
+  if (!user) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div>
-      <h3>Admin Dashboard</h3>
+      <h3>Welcome, {user.username} (Admin)</h3>
       <nav>
         <Link to="/admin-dashboard/patients">Patients</Link> |{' '}
         <Link to="/admin-dashboard/doctors">Doctors</Link>

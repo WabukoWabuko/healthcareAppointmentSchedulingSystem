@@ -14,14 +14,21 @@ function Login() {
     e.preventDefault();
     try {
       const user = await login(email, password);
+      console.log('Logged in user:', user); // Debug log
       if (user.role === 'patient') {
+        console.log('Redirecting to patient dashboard');
         navigate('/dashboard/appointments');
       } else if (user.role === 'doctor') {
+        console.log('Redirecting to doctor dashboard');
         navigate('/doctor-dashboard/appointments');
       } else if (user.role === 'admin') {
+        console.log('Redirecting to admin dashboard');
         navigate('/admin-dashboard/patients');
+      } else {
+        setErrorMessage('Unknown user role');
       }
     } catch (error) {
+      console.error('Login error:', error);
       setErrorMessage('Failed to login: ' + (error.response?.data?.detail || 'Unknown error'));
     }
   };

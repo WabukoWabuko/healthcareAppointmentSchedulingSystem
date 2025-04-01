@@ -17,20 +17,24 @@ function PatientDashboard() {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         });
+        console.log('Patient appointments:', res.data); // Debug log
         setAppointments(res.data);
       } catch (error) {
         console.error('Error fetching appointments:', error);
       }
     };
-    if (location.pathname === '/dashboard/appointments') {
+    if (user && token && location.pathname === '/dashboard/appointments') {
       fetchAppointments();
     }
-  }, [location, token]);
+  }, [location, user, token]);
+
+  if (!user) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div>
-      <h3>Patient Dashboard</h3>
-      {user && <p>Welcome, {user.username}!</p>} {/* Use the user variable */}
+      <h3>Welcome, {user.username} (Patient)</h3>
       <nav>
         <Link to="/dashboard/appointments">Appointments</Link> |{' '}
         <Link to="/dashboard/book">Book Appointment</Link>

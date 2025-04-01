@@ -16,20 +16,24 @@ function DoctorDashboard() {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         });
+        console.log('Doctor appointments:', res.data); // Debug log
         setAppointments(res.data);
       } catch (error) {
         console.error('Error fetching appointments:', error);
       }
     };
-    if (location.pathname === '/doctor-dashboard/appointments') {
+    if (user && token && location.pathname === '/doctor-dashboard/appointments') {
       fetchAppointments();
     }
-  }, [location, token]);
+  }, [location, user, token]);
+
+  if (!user) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div>
-      <h3>Doctor Dashboard</h3>
-      {user && <p>Welcome, {user.username}!</p>} {/* Use the user variable */}
+      <h3>Welcome, {user.username} (Doctor)</h3>
       <nav>
         <Link to="/doctor-dashboard/appointments">Appointments</Link>
       </nav>

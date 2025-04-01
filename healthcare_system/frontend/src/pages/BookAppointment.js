@@ -15,13 +15,22 @@ function BookAppointment() {
     const fetchDoctors = async () => {
       try {
         const token = localStorage.getItem('token');
+        if (!token) {
+          console.log('No token available yet');
+          return;
+        }
+        console.log('Token:', token);
         const res = await axios.get('http://127.0.0.1:8000/api/doctors/', {
           headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
         });
+        console.log('Doctors response:', res.data);
         setDoctors(res.data);
       } catch (error) {
         console.error('Error fetching doctors:', error);
+        if (error.response) {
+          console.error('Response data:', error.response.data);
+          console.error('Response status:', error.response.status);
+        }
         setErrorMessage('Failed to load doctors.');
       }
     };
@@ -34,16 +43,25 @@ function BookAppointment() {
       const fetchAvailabilities = async () => {
         try {
           const token = localStorage.getItem('token');
+          if (!token) {
+            console.log('No token available yet');
+            return;
+          }
+          console.log('Token:', token);
           const res = await axios.get('http://127.0.0.1:8000/api/availabilities/', {
             headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
           });
+          console.log('Availabilities response:', res.data);
           const doctorAvailabilities = res.data.filter(
             (avail) => avail.doctor.id === parseInt(selectedDoctor)
           );
           setAvailabilities(doctorAvailabilities);
         } catch (error) {
           console.error('Error fetching availabilities:', error);
+          if (error.response) {
+            console.error('Response data:', error.response.data);
+            console.error('Response status:', error.response.status);
+          }
           setErrorMessage('Failed to load availabilities.');
         }
       };
@@ -60,6 +78,11 @@ function BookAppointment() {
 
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('No token available yet');
+        return;
+      }
+      console.log('Token:', token);
       await axios.post(
         'http://127.0.0.1:8000/api/appointments/',
         {
@@ -69,7 +92,6 @@ function BookAppointment() {
         },
         {
           headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
         }
       );
       setSuccessMessage('Appointment booked successfully!');
@@ -79,6 +101,10 @@ function BookAppointment() {
       setAvailabilities([]);
     } catch (error) {
       console.error('Error booking appointment:', error);
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+      }
       setErrorMessage('Failed to book appointment: ' + (error.response?.data?.detail || 'Unknown error'));
       setSuccessMessage('');
     }
