@@ -49,3 +49,11 @@ function PatientDashboard() {
               )}
             </div>
           }
+        />
+        <Route path="book" element={<BookAppointment />} />
+      </Routes>
+    </div>
+  );
+}
+
+export default PatientDashboard;

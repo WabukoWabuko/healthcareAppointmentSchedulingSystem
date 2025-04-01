@@ -8,3 +8,10 @@ class DoctorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Doctor
         fields = ['id', 'user', 'name', 'specialization']
+
+class AvailabilitySerializer(serializers.ModelSerializer):
+    doctor = DoctorSerializer(read_only=True)
+
+    class Meta:
+        model = Availability
+        fields = ['id', 'doctor', 'start_time', 'end_time']
