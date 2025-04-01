@@ -2,10 +2,11 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from .models import MedicalRecord
 from .serializers import MedicalRecordSerializer
+from .permissions import MedicalRecordPermission
 
 class MedicalRecordViewSet(viewsets.ModelViewSet):
     serializer_class = MedicalRecordSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, MedicalRecordPermission]
 
     def get_queryset(self):
         user = self.request.user
