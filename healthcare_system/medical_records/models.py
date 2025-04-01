@@ -13,3 +13,9 @@ class MedicalRecord(models.Model):
 
     def __str__(self):
         return f"Medical Record for {self.patient.name} - {self.appointment.datetime}"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['patient'], name='medical_record_patient_idx'),
+            models.Index(fields=['appointment'], name='medical_record_appointment_idx'),
+        ]

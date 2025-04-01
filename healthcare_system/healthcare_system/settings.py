@@ -173,3 +173,22 @@ DJOSER = {
         'user_list': ['rest_framework.permissions.IsAdminUser'],
     },
 }
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),  # Change from 5 minutes to 1 hour this is just for testing
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+}
+
+# Redis Cache Configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',  # Use database 1 for caching (Celery uses 0)
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
+
+# Cache timeout (in seconds)
+CACHE_TIMEOUT = 60 * 15  # 15 minutes
