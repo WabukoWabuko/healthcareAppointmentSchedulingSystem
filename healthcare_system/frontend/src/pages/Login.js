@@ -14,7 +14,8 @@ function Login() {
     e.preventDefault();
     try {
       const user = await login(email, password);
-      console.log('Logged in user:', user); // Debug log
+      console.log('Logged in user:', user);
+      console.log('User role:', user.role); // Additional debug log
       if (user.role === 'patient') {
         console.log('Redirecting to patient dashboard');
         navigate('/dashboard/appointments');
@@ -25,7 +26,7 @@ function Login() {
         console.log('Redirecting to admin dashboard');
         navigate('/admin-dashboard/patients');
       } else {
-        setErrorMessage('Unknown user role');
+        setErrorMessage(`Unknown user role: ${user.role}`);
       }
     } catch (error) {
       console.error('Login error:', error);
