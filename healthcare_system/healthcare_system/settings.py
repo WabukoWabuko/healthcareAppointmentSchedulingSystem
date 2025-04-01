@@ -168,7 +168,7 @@ DJOSER = {
     'USER_CREATE_PASSWORD_RETYPE': True,
     'SEND_ACTIVATION_EMAIL': False,
     'PERMISSIONS': {
-        'user': ['rest_framework.permissions.AllowAny'],  # Allow anyone to register
+        'user': ['rest_framework.permissions.AllowAny'],
         'user_list': ['rest_framework.permissions.IsAdminUser'],
     },
 }
