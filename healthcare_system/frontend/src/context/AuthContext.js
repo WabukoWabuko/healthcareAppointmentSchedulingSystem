@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
         try {
           const res = await axios.get('http://127.0.0.1:8000/api/auth/users/me/', {
             headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,  // Include credentials
+            withCredentials: true,
           });
           setUser(res.data);
         } catch (error) {
@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const res = await axios.post('http://127.0.0.1:8000/api/auth/jwt/create/', { email, password }, {
-        withCredentials: true,  // Include credentials
+        withCredentials: true,
       });
       const accessToken = res.data.access;
       setToken(accessToken);

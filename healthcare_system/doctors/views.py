@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from .models import Doctor, Availability
-from .serializers import DoctorSerializer, AvailabilitySerializer
+from .models import Doctor
+from .serializers import DoctorSerializer
 
 class DoctorViewSet(viewsets.ModelViewSet):
     serializer_class = DoctorSerializer
@@ -9,23 +9,8 @@ class DoctorViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_authenticated:
-            if user.role == 'admin':
-                return Doctor.objects.all()
-            elif user.role == 'doctor':
-                return Doctor.objects.filter(user=user)
-            return Doctor.objects.all()  # Patients can see all doctors
+        if user.role == 'admin' or user.role == 'patient':
+            return Doctor.objects.all()
+        elif user.role == 'doctor':
+            return Doctor.objects.filter(user=user)
         return Doctor.objects.none()
-
-class AvailabilityViewSet(viewsets.ModelViewSet):
-    serializer_class = AvailabilitySerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        user = self.request.user
-        if user.is_authenticated:
-            if user.role == 'doctor':
-                return Availability.objects.filter(doctor__user=user)
-            elif user.role == 'patient':
-                return Availability.objects.all()
-        return Availability.objects.none()

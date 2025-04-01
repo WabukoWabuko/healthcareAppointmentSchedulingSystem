@@ -1,116 +1,119 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Table, Button } from 'react-bootstrap';
-import api from '../api';
+import { useState, useEffect, useContext } from 'react';
+import { Routes, Route, Link, useLocation } from 'react-router-dom';
+import axios from 'axios';
+import { AuthContext } from '../context/AuthContext';
+import { Table } from 'react-bootstrap';
 
 function AdminDashboard() {
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
+  const { token } = useContext(AuthContext);
+  const location = useLocation();
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchPatients = async () => {
       try {
-        // Fetch patients
-        const patientRes = await api.get('/api/patients/');
-        setPatients(patientRes.data);
-
-        // Fetch doctors
-        const doctorRes = await api.get('/api/doctors/doctors/');
-        setDoctors(doctorRes.data);
+        const res = await axios.get('http://127.0.0.1:8000/api/patients/', {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        });
+        setPatients(res.data);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching patients:', error);
       }
     };
-    fetchData();
-  }, []);
 
-  const handleDeletePatient = async (patientId) => {
-    if (window.confirm('Are you sure you want to delete this patient?')) {
+    const fetchDoctors = async () => {
       try {
-        await api.delete(`/api/patients/${patientId}/`);
-        setPatients(patients.filter((patient) => patient.id !== patientId));
-        alert('Patient deleted successfully!');
+        const res = await axios.get('http://127.0.0.1:8000/api/doctors/', {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        });
+        setDoctors(res.data);
       } catch (error) {
-        console.error('Error deleting patient:', error);
-        alert('Failed to delete patient.');
+        console.error('Error fetching doctors:', error);
       }
-    }
-  };
+    };
 
-  const handleDeleteDoctor = async (doctorId) => {
-    if (window.confirm('Are you sure you want to delete this doctor?')) {
-      try {
-        await api.delete(`/api/doctors/doctors/${doctorId}/`);
-        setDoctors(doctors.filter((doctor) => doctor.id !== doctorId));
-        alert('Doctor deleted successfully!');
-      } catch (error) {
-        console.error('Error deleting doctor:', error);
-        alert('Failed to delete doctor.');
-      }
+    if (location.pathname === '/admin-dashboard/patients') {
+      fetchPatients();
+    } else if (location.pathname === '/admin-dashboard/doctors') {
+      fetchDoctors();
     }
-  };
+  }, [location, token]);
 
   return (
-    <Container className="mt-4">
+    <div>
       <h3>Admin Dashboard</h3>
-
-      <h4>Manage Patients</h4>
-      <Table striped bordered hover>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Insurance ID</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {patients.map((patient) => (
-            <tr key={patient.id}>
-              <td>{patient.name}</td>
-              <td>{patient.email}</td>
-              <td>{patient.phone}</td>
-              <td>{patient.insurance_id}</td>
-              <td>
-                <Button
-                  variant="danger"
-                  onClick={() => handleDeletePatient(patient.id)}
-                >
-                  Delete
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-
-      <h4>Manage Doctors</h4>
-      <Table striped bordered hover>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Specialization</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {doctors.map((doctor) => (
-            <tr key={doctor.id}>
-              <td>{doctor.name}</td>
-              <td>{doctor.specialization}</td>
-              <td>
-                <Button
-                  variant="danger"
-                  onClick={() => handleDeleteDoctor(doctor.id)}
-                >
-                  Delete
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-    </Container>
+      <nav>
+        <Link to="/admin-dashboard/patients">Patients</Link> |{' '}
+        <Link to="/admin-dashboard/doctors">Doctors</Link>
+      </nav>
+      <Routes>
+        <Route
+          path="patients"
+          element={
+            <div>
+              <h4>Patients</h4>
+              {patients.length > 0 ? (
+                <Table striped bordered hover>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Insurance ID</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {patients.map((patient) => (
+                      <tr key={patient.id}>
+                        <td>{patient.name}</td>
+                        <td>{patient.email}</td>
+                        <td>{patient.phone}</td>
+                        <td>{patient.insurance_id}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              ) : (
+                <p>No patients found.</p>
+              )}
+            </div>
+          }
+        />
+        <Route
+          path="doctors"
+          element={
+            <div>
+              <h4>Doctors</h4>
+              {doctors.length > 0 ? (
+                <Table striped bordered hover>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Specialization</th>
+                      <th>Email</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {doctors.map((doctor) => (
+                      <tr key={doctor.id}>
+                        <td>{doctor.name}</td>
+                        <td>{doctor.specialization}</td>
+                        <td>{doctor.user.email}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              ) : (
+                <p>No doctors found.</p>
+              )}
+            </div>
+          }
+        />
+      </Routes>
+    </div>
   );
 }
 
