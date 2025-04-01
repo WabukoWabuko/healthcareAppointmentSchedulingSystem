@@ -30,6 +30,7 @@ function PatientDashboard() {
   return (
     <div>
       <h3>Patient Dashboard</h3>
+      {user && <p>Welcome, {user.username}!</p>} {/* Use the user variable */}
       <nav>
         <Link to="/dashboard/appointments">Appointments</Link> |{' '}
         <Link to="/dashboard/book">Book Appointment</Link>
