@@ -4,6 +4,7 @@ from .models import Doctor, Availability
 from .serializers import DoctorSerializer, AvailabilitySerializer
 
 class DoctorViewSet(viewsets.ModelViewSet):
+    queryset = Doctor.objects.all()  # Add static queryset
     serializer_class = DoctorSerializer
     permission_classes = [IsAuthenticated]
 
@@ -16,6 +17,7 @@ class DoctorViewSet(viewsets.ModelViewSet):
         return Doctor.objects.none()
 
 class AvailabilityViewSet(viewsets.ModelViewSet):
+    queryset = Availability.objects.all()  # Add static queryset
     serializer_class = AvailabilitySerializer
     permission_classes = [IsAuthenticated]
 
