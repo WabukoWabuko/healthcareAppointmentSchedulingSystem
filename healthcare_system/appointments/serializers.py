@@ -2,7 +2,8 @@ from rest_framework import serializers
 from .models import Appointment
 from patients.serializers import PatientSerializer
 from doctors.serializers import DoctorSerializer
-from doctors.models import Availability
+from doctors.models import Availability, Doctor
+from patients.models import Patient
 from django.utils import timezone
 from datetime import timedelta
 
@@ -14,9 +15,39 @@ class AppointmentSerializer(serializers.ModelSerializer):
         model = Appointment
         fields = ['id', 'patient', 'doctor', 'datetime', 'status']
 
+    def validate_datetime(self, value):
+        # Ensure the appointment time is on the hour or half-hour
+        minutes = value.minute
+        if minutes not in [0, 30]:
+            raise serializers.ValidationError("Appointments must start on the hour or half-hour (e.g., 10:00 or 10:30).")
+        return value
+
     def validate(self, data):
-        doctor = data.get('doctor')
+        # Extract fields
+        patient_id = self.initial_data.get('patient')
+        doctor_id = self.initial_data.get('doctor')
         appointment_time = data.get('datetime')
+        status = data.get('status')
+
+        # Validate patient
+        if not patient_id:
+            raise serializers.ValidationError("Patient ID is required.")
+        try:
+            patient = Patient.objects.get(id=patient_id)
+        except Patient.DoesNotExist:
+            raise serializers.ValidationError("Patient does not exist.")
+
+        # Validate doctor
+        if not doctor_id:
+            raise serializers.ValidationError("Doctor ID is required.")
+        try:
+            doctor = Doctor.objects.get(id=doctor_id)
+        except Doctor.DoesNotExist:
+            raise serializers.ValidationError("Doctor does not exist.")
+
+        # Validate appointment time
+        if not appointment_time:
+            raise serializers.ValidationError("Appointment time is required.")
 
         # Ensure the appointment time is in the future
         if appointment_time <= timezone.now():
@@ -43,5 +74,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
         if overlapping_appointments.exists():
             raise serializers.ValidationError("Doctor already has an appointment at this time.")
+
+        # Validate status
+        if status and status not in ['pending', 'confirmed', 'cancelled']:
+            raise serializers.ValidationError("Status must be one of: pending, confirmed, cancelled.")
 
         return data
