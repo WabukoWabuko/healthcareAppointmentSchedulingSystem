@@ -1,156 +1,123 @@
-import { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
-import { AuthContext } from '../context/AuthContext';
-import { Form, Button, Row, Col } from 'react-bootstrap';
-import { useLocation } from 'react-router-dom';
-import AppointmentCard from '../components/AppointmentCard';
+import React, { useState, useEffect } from 'react';
+import { Container, Table, Button, Form, Row, Col } from 'react-bootstrap';
+import api from '../api';
 
 function PatientDashboard() {
-  const { token, user } = useContext(AuthContext);
-  const [doctors, setDoctors] = useState([]);
   const [appointments, setAppointments] = useState([]);
-  const [doctorId, setDoctorId] = useState('');
-  const [datetime, setDatetime] = useState('');
-  const [patientId, setPatientId] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [loading, setLoading] = useState(true); // Add loading state
-  const location = useLocation();
+  const [doctors, setDoctors] = useState([]);
+  const [availabilities, setAvailabilities] = useState([]);
+  const [selectedDoctor, setSelectedDoctor] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!token || !user) {
-        console.log('No token or user available:', { token, user });
-        setErrorMessage('Please log in to view your dashboard.');
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      const config = { headers: { Authorization: `Bearer ${token}` } };
       try {
-        console.log('Fetching data for patient dashboard...');
-        const [docRes, apptRes, patientRes] = await Promise.all([
-          axios.get('http://127.0.0.1:8000/api/doctors/', config),
-          axios.get('http://127.0.0.1:8000/api/appointments/', config),
-          axios.get('http://127.0.0.1:8000/api/patients/', config),
-        ]);
-        console.log('User:', user);
-        console.log('Doctors Response:', docRes.data);
-        console.log('Appointments Response:', apptRes.data);
-        console.log('Patients Response:', patientRes.data);
+        // Fetch appointments
+        const apptRes = await api.get('/api/appointments/');
+        setAppointments(apptRes.data);
 
-        // Find the patient profile for the logged-in user
-        const patient = patientRes.data.find(p => p.email === user.email);
-        if (patient) {
-          console.log('Found patient:', patient);
-          setPatientId(patient.id);
-          const filteredAppointments = apptRes.data
-            .filter(appt => appt.patient === patient.id)
-            .map(appt => ({
-              ...appt,
-              doctor_name: docRes.data.find(d => d.id === appt.doctor)?.name || 'Unknown',
-            }));
-          console.log('Filtered Appointments:', filteredAppointments);
-          setAppointments(filteredAppointments);
-          setDoctors(docRes.data);
-        } else {
-          console.error('No patient profile found for the logged-in user:', user.email);
-          setErrorMessage('No patient profile found for this user.');
-        }
+        // Fetch doctors
+        const docRes = await api.get('/api/doctors/doctors/');
+        setDoctors(docRes.data);
+
+        // Fetch availabilities
+        const availRes = await api.get('/api/doctors/availabilities/');
+        setAvailabilities(availRes.data);
       } catch (error) {
-        console.error('Error fetching patient data:', error.response?.data || error.message);
-        setErrorMessage('Failed to load data: ' + (error.response?.data?.detail || error.message));
-      } finally {
-        setLoading(false);
+        console.error('Error fetching data:', error);
       }
     };
     fetchData();
-  }, [token, user]);
+  }, []);
 
-  const handleBook = async (e) => {
+  const handleBookAppointment = async (e) => {
     e.preventDefault();
-    const config = { headers: { Authorization: `Bearer ${token}` } };
     try {
-      const res = await axios.post(
-        'http://127.0.0.1:8000/api/appointments/',
-        { patient: patientId, doctor: doctorId, datetime, status: 'pending' },
-        config
-      );
-      setAppointments([...appointments, { ...res.data, doctor_name: doctors.find(d => d.id === res.data.doctor)?.name || 'Unknown' }]);
-      setDoctorId('');
-      setDatetime('');
-      setErrorMessage('');
+      const patientRes = await api.get('/api/patients/');
+      const patient = patientRes.data[0]; // Assuming the patient is the first one (simplified)
+
+      await api.post('/api/appointments/', {
+        patient: patient.id,
+        doctor: selectedDoctor,
+        datetime: selectedTime,
+        status: 'pending',
+      });
+      alert('Appointment booked successfully!');
+      const apptRes = await api.get('/api/appointments/');
+      setAppointments(apptRes.data);
     } catch (error) {
       console.error('Error booking appointment:', error);
-      const errorDetail = error.response?.data?.datetime || error.response?.data?.detail || 'Unknown error';
-      setErrorMessage(`Failed to book appointment: ${errorDetail}`);
-    }
-  };
-
-  const handleCancel = async (id) => {
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    try {
-      await axios.delete(`http://127.0.0.1:8000/api/appointments/${id}/`, config);
-      setAppointments(appointments.filter(a => a.id !== id));
-    } catch (error) {
-      console.error('Error cancelling appointment:', error);
-      setErrorMessage('Failed to cancel appointment: ' + (error.response?.data?.detail || 'Unknown error'));
+      alert('Failed to book appointment.');
     }
   };
 
   return (
-    <div>
-      {loading ? (
-        <div>Loading...</div>
-      ) : location.pathname.includes('/book') ? (
-        <div>
-          <h3>Book an Appointment</h3>
-          {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
-          {doctors.length === 0 && <p>No doctors available to book.</p>}
-          <Row>
-            <Col md={6}>
-              <Form onSubmit={handleBook}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Doctor</Form.Label>
-                  <Form.Select value={doctorId} onChange={(e) => setDoctorId(e.target.value)} required>
-                    <option value="">Select Doctor</option>
-                    {doctors.map(d => (
-                      <option key={d.id} value={d.id}>{d.name} ({d.specialization})</option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Date & Time</Form.Label>
-                  <Form.Control
-                    type="datetime-local"
-                    value={datetime}
-                    onChange={(e) => setDatetime(e.target.value)}
-                    required
-                  />
-                </Form.Group>
-                <Button variant="primary" type="submit">Book</Button>
-              </Form>
-            </Col>
-          </Row>
-        </div>
-      ) : (
-        <div>
-          <h3>Your Appointments</h3>
-          {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
-          <Row>
-            {appointments.length ? (
-              appointments.map(a => (
-                <Col md={4} key={a.id}>
-                  <AppointmentCard appointment={a} onCancel={handleCancel} />
-                </Col>
-              ))
-            ) : (
-              <p>No appointments found.</p>
-            )}
-          </Row>
-        </div>
-      )}
-    </div>
+    <Container className="mt-4">
+      <h3>Patient Dashboard - Appointments</h3>
+      <h4>Your Appointments</h4>
+      <Table striped bordered hover>
+        <thead>
+          <tr>
+            <th>Doctor</th>
+            <th>Date & Time</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {appointments.map((appt) => (
+            <tr key={appt.id}>
+              <td>{appt.doctor.name}</td>
+              <td>{new Date(appt.datetime).toLocaleString()}</td>
+              <td>{appt.status}</td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+
+      <h4>Book a New Appointment</h4>
+      <Form onSubmit={handleBookAppointment}>
+        <Row>
+          <Col md={6}>
+            <Form.Group className="mb-3">
+              <Form.Label>Select Doctor</Form.Label>
+              <Form.Select
+                value={selectedDoctor}
+                onChange={(e) => setSelectedDoctor(e.target.value)}
+                required
+              >
+                <option value="">Select a doctor</option>
+                {doctors.map((doctor) => (
+                  <option key={doctor.id} value={doctor.id}>
+                    {doctor.name} ({doctor.specialization})
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+          </Col>
+          <Col md={6}>
+            <Form.Group className="mb-3">
+              <Form.Label>Select Time</Form.Label>
+              <Form.Select
+                value={selectedTime}
+                onChange={(e) => setSelectedTime(e.target.value)}
+                required
+              >
+                <option value="">Select a time</option>
+                {availabilities
+                  .filter((avail) => avail.doctor === parseInt(selectedDoctor))
+                  .map((avail) => (
+                    <option key={avail.id} value={avail.start_time}>
+                      {new Date(avail.start_time).toLocaleString()} -{' '}
+                      {new Date(avail.end_time).toLocaleString()}
+                    </option>
+                  ))}
+              </Form.Select>
+            </Form.Group>
+          </Col>
+        </Row>
+        <Button variant="primary" type="submit">Book Appointment</Button>
+      </Form>
+    </Container>
   );
 }
 

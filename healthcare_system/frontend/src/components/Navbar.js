@@ -1,9 +1,10 @@
-import { useContext } from 'react';
+import React, { useContext } from 'react';
+import { Navbar, Nav, Button } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
-function Navbar() {
-  const { user, token, logout } = useContext(AuthContext);
+function CustomNavbar() {
+  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -12,36 +13,41 @@ function Navbar() {
   };
 
   return (
-    <nav className="navbar">
-      <Link to="/" className="navbar-brand">Healthcare System</Link>
-      {token && user && (
-        <>
-          <div className="navbar-links">
-            {user.role === 'patient' && (
-              <>
-                <Link to="/dashboard/appointments">Appointments</Link>
-                <Link to="/dashboard/book">Book Appointment</Link>
-              </>
-            )}
-            {user.role === 'doctor' && (
-              <>
-                <Link to="/doctor-dashboard/appointments">Appointments</Link>
-                <Link to="/doctor-dashboard/availability">Availability</Link>
-              </>
-            )}
-            {user.role === 'admin' && (
-              <>
-                <Link to="/admin-dashboard/patients">Patients</Link>
-                <Link to="/admin-dashboard/doctors">Doctors</Link>
-                <Link to="/admin-dashboard/appointments">Appointments</Link>
-              </>
-            )}
-          </div>
-          <button className="logout-btn" onClick={handleLogout}>Logout</button>
-        </>
-      )}
-    </nav>
+    <Navbar bg="primary" variant="dark" expand="lg">
+      <Navbar.Brand as={Link} to="/">Healthcare System</Navbar.Brand>
+      <Navbar.Toggle aria-controls="basic-navbar-nav" />
+      <Navbar.Collapse id="basic-navbar-nav">
+        <Nav className="me-auto">
+          {user ? (
+            <>
+              {user.role === 'patient' && (
+                <Nav.Link as={Link} to="/dashboard/appointments">Dashboard</Nav.Link>
+              )}
+              {user.role === 'doctor' && (
+                <Nav.Link as={Link} to="/doctor-dashboard/appointments">Dashboard</Nav.Link>
+              )}
+              {user.role === 'admin' && (
+                <Nav.Link as={Link} to="/admin-dashboard/patients">Admin Dashboard</Nav.Link>
+              )}
+            </>
+          ) : (
+            <>
+              <Nav.Link as={Link} to="/login">Login</Nav.Link>
+              <Nav.Link as={Link} to="/register">Register</Nav.Link>
+            </>
+          )}
+        </Nav>
+        {user && (
+          <Nav>
+            <Nav.Item className="d-flex align-items-center">
+              <span className="text-white me-2">Welcome, {user.username}</span>
+              <Button variant="outline-light" onClick={handleLogout}>Logout</Button>
+            </Nav.Item>
+          </Nav>
+        )}
+      </Navbar.Collapse>
+    </Navbar>
   );
 }
 
-export default Navbar;
+export default CustomNavbar;

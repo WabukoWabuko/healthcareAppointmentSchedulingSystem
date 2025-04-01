@@ -14,6 +14,7 @@ class DoctorViewSet(viewsets.ModelViewSet):
                 return Doctor.objects.all()
             elif user.role == 'doctor':
                 return Doctor.objects.filter(user=user)
+            return Doctor.objects.all()  # Patients can see all doctors
         return Doctor.objects.none()
 
 class AvailabilityViewSet(viewsets.ModelViewSet):
@@ -25,4 +26,6 @@ class AvailabilityViewSet(viewsets.ModelViewSet):
         if user.is_authenticated:
             if user.role == 'doctor':
                 return Availability.objects.filter(doctor__user=user)
+            elif user.role == 'patient':
+                return Availability.objects.all()
         return Availability.objects.none()

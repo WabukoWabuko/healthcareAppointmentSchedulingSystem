@@ -1,351 +1,116 @@
-import { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
-import { AuthContext } from '../context/AuthContext';
-import { Table, Button, Row, Col, Form } from 'react-bootstrap';
-import { useLocation, Link } from 'react-router-dom';
-import AppointmentCard from '../components/AppointmentCard';
+import React, { useState, useEffect } from 'react';
+import { Container, Table, Button } from 'react-bootstrap';
+import api from '../api';
 
 function AdminDashboard() {
-  const { token, user } = useContext(AuthContext);
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
-  const [appointments, setAppointments] = useState([]);
-  const [newPatient, setNewPatient] = useState({ name: '', email: '', phone: '', password: '' });
-  const [newDoctor, setNewDoctor] = useState({ name: '', specialization: '', email: '', password: '' });
-  const [errorMessage, setErrorMessage] = useState('');
-  const [loading, setLoading] = useState(true);
-  const location = useLocation();
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!token || !user) {
-        console.log('No token or user available:', { token, user });
-        setErrorMessage('Please log in to view your dashboard.');
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      const config = { headers: { Authorization: `Bearer ${token}` } };
       try {
-        console.log('Fetching data for admin dashboard...');
-        const [patRes, docRes, apptRes] = await Promise.all([
-          axios.get('http://127.0.0.1:8000/api/patients/', config),
-          axios.get('http://127.0.0.1:8000/api/doctors/', config),
-          axios.get('http://127.0.0.1:8000/api/appointments/', config),
-        ]);
-        console.log('User:', user);
-        console.log('Patients Response:', patRes.data);
-        console.log('Doctors Response:', docRes.data);
-        console.log('Appointments Response:', apptRes.data);
-        setPatients(patRes.data);
-        setDoctors(docRes.data);
-        setAppointments(apptRes.data.map(appt => ({
-          ...appt,
-          patient_name: patRes.data.find(p => p.id === appt.patient)?.name || 'Unknown',
-          doctor_name: docRes.data.find(d => d.id === appt.doctor)?.name || 'Unknown',
-        })));
+        // Fetch patients
+        const patientRes = await api.get('/api/patients/');
+        setPatients(patientRes.data);
+
+        // Fetch doctors
+        const doctorRes = await api.get('/api/doctors/doctors/');
+        setDoctors(doctorRes.data);
       } catch (error) {
-        console.error('Error fetching admin data:', error.response?.data || error.message);
-        setErrorMessage('Failed to load data: ' + (error.response?.data?.detail || error.message));
-      } finally {
-        setLoading(false);
+        console.error('Error fetching data:', error);
       }
     };
     fetchData();
-  }, [token, user]);
+  }, []);
 
-  const handleCancel = async (id) => {
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    try {
-      await axios.delete(`http://127.0.0.1:8000/api/appointments/${id}/`, config);
-      setAppointments(appointments.filter(a => a.id !== id));
-    } catch (error) {
-      console.error('Error cancelling appointment:', error);
-      setErrorMessage('Failed to cancel appointment: ' + (error.response?.data?.detail || 'Unknown error'));
+  const handleDeletePatient = async (patientId) => {
+    if (window.confirm('Are you sure you want to delete this patient?')) {
+      try {
+        await api.delete(`/api/patients/${patientId}/`);
+        setPatients(patients.filter((patient) => patient.id !== patientId));
+        alert('Patient deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting patient:', error);
+        alert('Failed to delete patient.');
+      }
     }
   };
 
-  const handleApprove = async (id) => {
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    try {
-      await axios.patch(`http://127.0.0.1:8000/api/appointments/${id}/`, { status: 'confirmed' }, config);
-      setAppointments(appointments.map(a => (a.id === id ? { ...a, status: 'confirmed' } : a)));
-    } catch (error) {
-      console.error('Error approving appointment:', error);
-      setErrorMessage('Failed to approve appointment: ' + (error.response?.data?.detail || 'Unknown error'));
-    }
-  };
-
-  const handleReject = async (id) => {
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    try {
-      await axios.patch(`http://127.0.0.1:8000/api/appointments/${id}/`, { status: 'cancelled' }, config);
-      setAppointments(appointments.map(a => (a.id === id ? { ...a, status: 'cancelled' } : a)));
-    } catch (error) {
-      console.error('Error rejecting appointment:', error);
-      setErrorMessage('Failed to reject appointment: ' + (error.response?.data?.detail || 'Unknown error'));
-    }
-  };
-
-  const handleDeletePatient = async (id) => {
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    try {
-      await axios.delete(`http://127.0.0.1:8000/api/patients/${id}/`, config);
-      setPatients(patients.filter(p => p.id !== id));
-    } catch (error) {
-      console.error('Error deleting patient:', error);
-      setErrorMessage('Failed to delete patient: ' + (error.response?.data?.detail || 'Unknown error'));
-    }
-  };
-
-  const handleDeleteDoctor = async (id) => {
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    try {
-      await axios.delete(`http://127.0.0.1:8000/api/doctors/${id}/`, config);
-      setDoctors(doctors.filter(d => d.id !== id));
-    } catch (error) {
-      console.error('Error deleting doctor:', error);
-      setErrorMessage('Failed to delete doctor: ' + (error.response?.data?.detail || 'Unknown error'));
-    }
-  };
-
-  const handleCreatePatient = async (e) => {
-    e.preventDefault();
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    try {
-      const userData = {
-        email: newPatient.email,
-        username: newPatient.email.split('@')[0],
-        password: newPatient.password,
-        role: 'patient',
-      };
-      const userRes = await axios.post('http://127.0.0.1:8000/api/auth/users/', userData, config);
-      const patientData = {
-        user: userRes.data.id,
-        name: newPatient.name,
-        email: newPatient.email,
-        phone: newPatient.phone,
-        insurance_id: 'INS_NEW',
-      };
-      const patientRes = await axios.post('http://127.0.0.1:8000/api/patients/', patientData, config);
-      setPatients([...patients, patientRes.data]);
-      setNewPatient({ name: '', email: '', phone: '', password: '' });
-      setErrorMessage('');
-    } catch (error) {
-      console.error('Error creating patient:', error);
-      setErrorMessage('Failed to create patient: ' + (error.response?.data?.detail || 'Unknown error'));
-    }
-  };
-
-  const handleCreateDoctor = async (e) => {
-    e.preventDefault();
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    try {
-      const userData = {
-        email: newDoctor.email,
-        username: newDoctor.email.split('@')[0],
-        password: newDoctor.password,
-        role: 'doctor',
-      };
-      const userRes = await axios.post('http://127.0.0.1:8000/api/auth/users/', userData, config);
-      const doctorData = {
-        user: userRes.data.id,
-        name: newDoctor.name,
-        specialization: newDoctor.specialization,
-      };
-      const doctorRes = await axios.post('http://127.0.0.1:8000/api/doctors/', doctorData, config);
-      setDoctors([...doctors, doctorRes.data]);
-      setNewDoctor({ name: '', specialization: '', email: '', password: '' });
-      setErrorMessage('');
-    } catch (error) {
-      console.error('Error creating doctor:', error);
-      setErrorMessage('Failed to create doctor: ' + (error.response?.data?.detail || 'Unknown error'));
+  const handleDeleteDoctor = async (doctorId) => {
+    if (window.confirm('Are you sure you want to delete this doctor?')) {
+      try {
+        await api.delete(`/api/doctors/doctors/${doctorId}/`);
+        setDoctors(doctors.filter((doctor) => doctor.id !== doctorId));
+        alert('Doctor deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting doctor:', error);
+        alert('Failed to delete doctor.');
+      }
     }
   };
 
   return (
-    <div>
-      {loading ? (
-        <div>Loading...</div>
-      ) : location.pathname.includes('/patients/new') ? (
-        <div>
-          <h3>Add New Patient</h3>
-          {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
-          <Form onSubmit={handleCreatePatient}>
-            <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
-              <Form.Control
-                type="text"
-                value={newPatient.name}
-                onChange={(e) => setNewPatient({ ...newPatient, name: e.target.value })}
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Email</Form.Label>
-              <Form.Control
-                type="email"
-                value={newPatient.email}
-                onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })}
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Phone</Form.Label>
-              <Form.Control
-                type="text"
-                value={newPatient.phone}
-                onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })}
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Password</Form.Label>
-              <Form.Control
-                type="password"
-                value={newPatient.password}
-                onChange={(e) => setNewPatient({ ...newPatient, password: e.target.value })}
-                required
-              />
-            </Form.Group>
-            <Button variant="primary" type="submit">Create Patient</Button>
-          </Form>
-        </div>
-      ) : location.pathname.includes('/doctors/new') ? (
-        <div>
-          <h3>Add New Doctor</h3>
-          {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
-          <Form onSubmit={handleCreateDoctor}>
-            <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
-              <Form.Control
-                type="text"
-                value={newDoctor.name}
-                onChange={(e) => setNewDoctor({ ...newDoctor, name: e.target.value })}
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Specialization</Form.Label>
-              <Form.Control
-                type="text"
-                value={newDoctor.specialization}
-                onChange={(e) => setNewDoctor({ ...newDoctor, specialization: e.target.value })}
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Email</Form.Label>
-              <Form.Control
-                type="email"
-                value={newDoctor.email}
-                onChange={(e) => setNewDoctor({ ...newDoctor, email: e.target.value })}
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Password</Form.Label>
-              <Form.Control
-                type="password"
-                value={newDoctor.password}
-                onChange={(e) => setNewDoctor({ ...newDoctor, password: e.target.value })}
-                required
-              />
-            </Form.Group>
-            <Button variant="primary" type="submit">Create Doctor</Button>
-          </Form>
-        </div>
-      ) : location.pathname.includes('/doctors') ? (
-        <div>
-          <h3>Doctors</h3>
-          {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
-          <Button variant="primary" as={Link} to="/dashboard/doctors/new" className="mb-3">Add Doctor</Button>
-          {doctors.length ? (
-            <Table striped bordered hover>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Specialization</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {doctors.map(d => (
-                  <tr key={d.id}>
-                    <td>{d.id}</td>
-                    <td>{d.name}</td>
-                    <td>{d.specialization}</td>
-                    <td>
-                      <Button variant="danger" onClick={() => handleDeleteDoctor(d.id)}>Delete</Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          ) : (
-            <p>No doctors found.</p>
-          )}
-        </div>
-      ) : location.pathname.includes('/appointments') ? (
-        <div>
-          <h3>All Appointments</h3>
-          {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
-          {appointments.length ? (
-            <Row>
-              {appointments.map(a => (
-                <Col md={4} key={a.id}>
-                  <AppointmentCard appointment={a} onCancel={handleCancel} />
-                  {a.status === 'pending' && (
-                    <div className="mt-2">
-                      <Button variant="success" onClick={() => handleApprove(a.id)} className="me-2">Approve</Button>
-                      <Button variant="warning" onClick={() => handleReject(a.id)}>Reject</Button>
-                    </div>
-                  )}
-                </Col>
-              ))}
-            </Row>
-          ) : (
-            <p>No appointments found.</p>
-          )}
-        </div>
-      ) : (
-        <div>
-          <h3>Patients</h3>
-          {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
-          <Button variant="primary" as={Link} to="/dashboard/patients/new" className="mb-3">Add Patient</Button>
-          {patients.length ? (
-            <Table striped bordered hover>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {patients.map(p => (
-                  <tr key={p.id}>
-                    <td>{p.id}</td>
-                    <td>{p.name}</td>
-                    <td>{p.email}</td>
-                    <td>{p.phone}</td>
-                    <td>
-                      <Button variant="danger" onClick={() => handleDeletePatient(p.id)}>Delete</Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          ) : (
-            <p>No patients found.</p>
-          )}
-        </div>
-      )}
-    </div>
+    <Container className="mt-4">
+      <h3>Admin Dashboard</h3>
+
+      <h4>Manage Patients</h4>
+      <Table striped bordered hover>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Insurance ID</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {patients.map((patient) => (
+            <tr key={patient.id}>
+              <td>{patient.name}</td>
+              <td>{patient.email}</td>
+              <td>{patient.phone}</td>
+              <td>{patient.insurance_id}</td>
+              <td>
+                <Button
+                  variant="danger"
+                  onClick={() => handleDeletePatient(patient.id)}
+                >
+                  Delete
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+
+      <h4>Manage Doctors</h4>
+      <Table striped bordered hover>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Specialization</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {doctors.map((doctor) => (
+            <tr key={doctor.id}>
+              <td>{doctor.name}</td>
+              <td>{doctor.specialization}</td>
+              <td>
+                <Button
+                  variant="danger"
+                  onClick={() => handleDeleteDoctor(doctor.id)}
+                >
+                  Delete
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </Container>
   );
 }
 

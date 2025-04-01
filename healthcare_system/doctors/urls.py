@@ -3,8 +3,8 @@ from rest_framework.routers import DefaultRouter
 from .views import DoctorViewSet, AvailabilityViewSet
 
 router = DefaultRouter()
-router.register(r'doctors', DoctorViewSet, basename='doctor')  # Added basename
-router.register(r'availability', AvailabilityViewSet, basename='availability')  # Added basename
+router.register(r'doctors', DoctorViewSet, basename='doctor')
+router.register(r'availabilities', AvailabilityViewSet, basename='availability')
 
 urlpatterns = [
     path('', include(router.urls)),

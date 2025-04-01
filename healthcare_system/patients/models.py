@@ -7,7 +7,6 @@ class Patient(models.Model):
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=15)
     insurance_id = models.CharField(max_length=50, unique=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)  # Automatically set on creation
 
     def set_insurance_id(self, insurance_id):
         self.insurance_id = insurance_id

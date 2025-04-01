@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import api from '../api';  // Use the new Axios instance
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Form, Button, Row, Col } from 'react-bootstrap';
 
@@ -14,11 +14,13 @@ function Register() {
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/api/auth/users/', {
+      await axios.post('http://127.0.0.1:8000/api/auth/users/', {
         email,
         username,
         password,
         role,
+      }, {
+        withCredentials: true,  // Include credentials (if needed)
       });
       navigate('/login');
     } catch (error) {
