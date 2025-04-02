@@ -195,36 +195,10 @@ pytest -v
 
 ## Documentation
 - **Database Schema Diagram** (generated with dbdiagram.io):  
-  ![Database Schema](docs/database_schema.png)
+  <img src="docs/database_schema.png" alt="Database Schema" width="600">
 
 - **Sequence Diagram for Appointment Booking** (generated with Mermaid.js):  
-```
-mermaid
-  sequenceDiagram
-      participant Client
-      participant ViewSet as AppointmentViewSet
-      participant Serializer as AppointmentSerializer
-      participant Availability as Availability Model
-      participant Appointment as Appointment Model
-      participant DB as Database
-
-      Client->>ViewSet: POST /api/appointments/ {patient, doctor, datetime, status}
-      ViewSet->>Serializer: validate(data)
-      Serializer->>Serializer: Check time (on hour/half-hour)
-      Serializer->>Availability: Query doctor availability
-      Availability-->>Serializer: Return available slots
-      Serializer->>Appointment: Query for overlapping appointments
-      Appointment-->>Serializer: Return existing appointments
-      alt Validation Fails
-          Serializer-->>ViewSet: Raise ValidationError
-          ViewSet-->>Client: 400 Bad Request
-      else Validation Passes
-          Serializer->>DB: Save Appointment
-          DB-->>Serializer: Appointment saved
-          Serializer-->>ViewSet: Return appointment data
-          ViewSet-->>Client: 201 Created {appointment data}
-      end
-```
+  <img src="docs/sequence_diagram_appointment_booking.png" alt="Sequence Diagram" width="600">
 
 ## Contributing
 1. Fork the repository.
