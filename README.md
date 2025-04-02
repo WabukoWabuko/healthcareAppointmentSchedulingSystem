@@ -193,6 +193,39 @@ pytest -v
 - **Total Tests**: 25 tests across users, patients, doctors, appointments, and medical_records.
 - **Coverage**: Tests cover models, serializers, and API endpoints with role-based access control.
 
+## Documentation
+- **Database Schema Diagram** (generated with dbdiagram.io):  
+  ![Database Schema](docs/database_schema.png)
+
+- **Sequence Diagram for Appointment Booking** (generated with Mermaid.js):  
+```
+mermaid
+  sequenceDiagram
+      participant Client
+      participant ViewSet as AppointmentViewSet
+      participant Serializer as AppointmentSerializer
+      participant Availability as Availability Model
+      participant Appointment as Appointment Model
+      participant DB as Database
+
+      Client->>ViewSet: POST /api/appointments/ {patient, doctor, datetime, status}
+      ViewSet->>Serializer: validate(data)
+      Serializer->>Serializer: Check time (on hour/half-hour)
+      Serializer->>Availability: Query doctor availability
+      Availability-->>Serializer: Return available slots
+      Serializer->>Appointment: Query for overlapping appointments
+      Appointment-->>Serializer: Return existing appointments
+      alt Validation Fails
+          Serializer-->>ViewSet: Raise ValidationError
+          ViewSet-->>Client: 400 Bad Request
+      else Validation Passes
+          Serializer->>DB: Save Appointment
+          DB-->>Serializer: Appointment saved
+          Serializer-->>ViewSet: Return appointment data
+          ViewSet-->>Client: 201 Created {appointment data}
+      end
+```
+
 ## Contributing
 1. Fork the repository.
 2. Create a new branch (git checkout -b feature/your-feature).
