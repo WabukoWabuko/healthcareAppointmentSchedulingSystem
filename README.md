@@ -195,10 +195,10 @@ pytest -v
 
 ## Documentation
 - **Database Schema Diagram** (generated with dbdiagram.io):  
-  <img src="healthcareAppointmentSchedulingSystem/healthcare_system/docs/database_schema.png" alt="Database Schema" width="600">
+  <img src="database_schema.png" alt="Database Schema" width="600">
 
 - **Sequence Diagram for Appointment Booking** (generated with Mermaid.js):  
-  <img src="healthcareAppointmentSchedulingSystem/healthcare_system/docs/sequence_diagram_appointment_booking.png" alt="Sequence Diagram" width="600">
+  <img src="sequence_diagram_appointment_booking.png" alt="Sequence Diagram" width="600">
 
 ## Contributing
 1. Fork the repository.
