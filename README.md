@@ -100,6 +100,10 @@ python3 manage.py runserver
 - The application will be available at http://127.0.0.1:8000/.
 
 ## API Endpoints
+The API endpoints are documented using Swagger/OpenAPI. After starting the server, access the API documentation at:
+
+- Swagger UI: http://localhost:8000/api/swagger/
+- ReDoc: http://localhost:8000/api/redoc/
 ### Authentication
 - **Login (Obtain JWT Token)**:
 - POST /api/auth/jwt/token/

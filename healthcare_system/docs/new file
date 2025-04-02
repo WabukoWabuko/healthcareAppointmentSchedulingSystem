@@ -1,0 +1,24 @@
+sequenceDiagram
+    participant Client
+    participant ViewSet as AppointmentViewSet
+    participant Serializer as AppointmentSerializer
+    participant Availability as Availability Model
+    participant Appointment as Appointment Model
+    participant DB as Database
+
+    Client->>ViewSet: POST /api/appointments/ {patient, doctor, datetime, status}
+    ViewSet->>Serializer: validate(data)
+    Serializer->>Serializer: Check time (on hour/half-hour)
+    Serializer->>Availability: Query doctor availability
+    Availability-->>Serializer: Return available slots
+    Serializer->>Appointment: Query for overlapping appointments
+    Appointment-->>Serializer: Return existing appointments
+    alt Validation Fails
+        Serializer-->>ViewSet: Raise ValidationError
+        ViewSet-->>Client: 400 Bad Request
+    else Validation Passes
+        Serializer->>DB: Save Appointment
+        DB-->>Serializer: Appointment saved
+        Serializer-->>ViewSet: Return appointment data
+        ViewSet-->>Client: 201 Created {appointment data}
+    end
