@@ -11,7 +11,7 @@ class UserAPITests(APITestCase):
 
     def test_login(self):
         response = self.client.post(
-            reverse('jwt-create'),
+            reverse('token_obtain_pair'),  # Updated to match rest_framework_simplejwt URL name
             {'email': 'test@example.com', 'password': 'pass123'},
             format='json'
         )
@@ -21,7 +21,7 @@ class UserAPITests(APITestCase):
 
     def test_login_invalid_credentials(self):
         response = self.client.post(
-            reverse('jwt-create'),
+            reverse('token_obtain_pair'),  # Updated to match rest_framework_simplejwt URL name
             {'email': 'test@example.com', 'password': 'wrongpass'},
             format='json'
         )

@@ -6,11 +6,12 @@ from .serializers import PatientSerializer
 class PatientViewSet(viewsets.ModelViewSet):
     serializer_class = PatientSerializer
     permission_classes = [IsAuthenticated]
+    queryset = Patient.objects.all()  # Added for router basename
 
     def get_queryset(self):
         user = self.request.user
-        if user.role == 'admin':
-            return Patient.objects.all()
-        elif user.role == 'patient':
+        if user.role == 'patient':
             return Patient.objects.filter(user=user)
+        elif user.role == 'admin':
+            return Patient.objects.all()
         return Patient.objects.none()

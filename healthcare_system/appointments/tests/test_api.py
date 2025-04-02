@@ -15,13 +15,14 @@ class AppointmentAPITests(APITestCase):
         self.doctor_user = CustomUserFactory(role='doctor')
         self.admin_user = CustomUserFactory(role='admin')
         # Create patient and doctor
-        self.patient = PatientFactory(user=self.patient_user)
+        self.patient = PatientFactory(user=self.patient_user, email=self.patient_user.email)
         self.doctor = DoctorFactory(user=self.doctor_user)
-        # Create availability
+        # Set availability to start on the hour
+        start_time = timezone.now().replace(minute=0, second=0, microsecond=0) + timedelta(days=1)
         self.availability = AvailabilityFactory(
             doctor=self.doctor,
-            start_time=timezone.now() + timedelta(days=1),
-            end_time=timezone.now() + timedelta(days=1, hours=2)
+            start_time=start_time,
+            end_time=start_time + timedelta(hours=2)
         )
         # Generate tokens
         self.patient_token = str(AccessToken.for_user(self.patient_user))

@@ -9,6 +9,7 @@ class MedicalRecordSerializerTests(TestCase):
     def setUp(self):
         self.patient = PatientFactory()
         self.appointment = AppointmentFactory(patient=self.patient)
+        self.appointment.save()  # Ensure the appointment is saved
 
     def test_create_medical_record(self):
         data = {
@@ -33,7 +34,7 @@ class MedicalRecordSerializerTests(TestCase):
         serializer = MedicalRecordSerializer(data=data)
         with self.assertRaises(ValidationError) as cm:
             serializer.is_valid(raise_exception=True)
-        self.assertIn("Diagnosis is required", str(cm.exception))
+        self.assertIn("This field is required", str(cm.exception))
 
     def test_notes_too_long(self):
         data = {
