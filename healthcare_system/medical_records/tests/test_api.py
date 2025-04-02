@@ -38,7 +38,7 @@ class MedicalRecordAPITests(APITestCase):
             data,
             format='json'
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK) 
         self.medical_record.refresh_from_db()
         self.assertEqual(self.medical_record.notes, 'Updated by doctor')
 
