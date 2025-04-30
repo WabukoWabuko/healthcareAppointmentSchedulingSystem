@@ -11,3 +11,4 @@ class CustomUserViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             return [AllowAny()]  
         return [IsAuthenticated()] 
+        
